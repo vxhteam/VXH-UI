@@ -35,7 +35,7 @@ VXH UI Library is a powerful Roblox UI library inspired by Rayfield UI. It provi
 The easiest way to use VXH UI is with a loadstring:
 
 ```lua
-local VXH = loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_USERNAME/VXH-UI/main/src/vxh-ui.lua"))()
+local VXH = loadstring(game:HttpGet("https://raw.githubusercontent.com/vxhteam/VXH-UI/refs/heads/main/vxh.lua"))()
 ```
 
 ### Your First Script Hub
@@ -44,7 +44,7 @@ Let's create a simple script hub to get you started:
 
 ```lua
 -- Load VXH Library
-local VXH = loadstring(game:HttpGet("VXH_SCRIPT_URL"))()
+local VXH = loadstring(game:HttpGet("https://raw.githubusercontent.com/vxhteam/VXH-UI/refs/heads/main/vxh.lua"))()
 
 -- Create Window
 local Window = VXH:CreateWindow({
