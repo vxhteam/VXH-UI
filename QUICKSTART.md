@@ -7,7 +7,7 @@ Get up and running with VXH UI Library in just 5 minutes!
 Copy and paste this code to load VXH UI Library:
 
 ```lua
-local VXH = loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_USERNAME/VXH-UI/main/src/vxh-ui.lua"))()
+local VXH = loadstring(game:HttpGet("https://raw.githubusercontent.com/vxhteam/VXH-UI/refs/heads/main/vxh.lua"))()
 ```
 
 ## 📝 Basic Template
@@ -16,7 +16,7 @@ Here's a complete basic script hub template:
 
 ```lua
 -- Load VXH Library
-local VXH = loadstring(game:HttpGet("VXH_SCRIPT_URL"))()
+local VXH = loadstring(game:HttpGet("https://raw.githubusercontent.com/vxhteam/VXH-UI/refs/heads/main/vxh.lua"))()
 
 -- Create Window
 local Window = VXH:CreateWindow({
@@ -64,7 +64,7 @@ Tab:CreateSlider({
 
 ### Step 1: Load the Library
 ```lua
-local VXH = loadstring(game:HttpGet("VXH_SCRIPT_URL"))()
+local VXH = loadstring(game:HttpGet("https://raw.githubusercontent.com/vxhteam/VXH-UI/refs/heads/main/vxh.lua"))()
 ```
 
 ### Step 2: Create a Window
