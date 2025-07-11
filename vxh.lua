@@ -1,0 +1,138 @@
+-- vxh.lua
+-- VXH UI Framework (Rayfield-style)
+local UIS = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local VXHMenu = {}
+VXHMenu.Theme = {
+    Dark = {
+        Background = Color3.fromRGB(25,25,25),
+        Topbar = Color3.fromRGB(30,30,30),
+        Text = Color3.fromRGB(255,255,255),
+        Accent = Color3.fromRGB(0,170,255)
+    }
+}
+
+function VXHMenu:CreateWindow(config)
+    local theme = self.Theme[config.Theme or "Dark"]
+    local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+    gui.Name = "VXH_UI"
+    gui.ResetOnSpawn = false
+
+    local main = Instance.new("Frame", gui)
+    main.Size = UDim2.new(0, 500, 0, 350)
+    main.Position = UDim2.new(0.3, 0, 0.3, 0)
+    main.BackgroundColor3 = theme.Background
+    main.Name = "Main"
+    main.ClipsDescendants = true
+    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 8)
+
+    local topbar = Instance.new("TextLabel", main)
+    topbar.Size = UDim2.new(1, 0, 0, 35)
+    topbar.BackgroundColor3 = theme.Topbar
+    topbar.Text = "  " .. (config.Name or "VXH Menu")
+    topbar.TextColor3 = theme.Text
+    topbar.Font = Enum.Font.GothamBold
+    topbar.TextSize = 16
+    topbar.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Dragging
+    local dragging, dragStart, startPos
+    topbar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = main.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    -- Tabs
+    local tabs = Instance.new("Frame", main)
+    tabs.Size = UDim2.new(0, 120, 1, -35)
+    tabs.Position = UDim2.new(0, 0, 0, 35)
+    tabs.BackgroundColor3 = theme.Background
+    Instance.new("UIListLayout", tabs).SortOrder = Enum.SortOrder.LayoutOrder
+
+    local content = Instance.new("Frame", main)
+    content.Size = UDim2.new(1, -120, 1, -35)
+    content.Position = UDim2.new(0, 120, 0, 35)
+    content.BackgroundColor3 = theme.Background
+
+    local api = {}
+
+    function api:CreateTab(tabName)
+        local tabButton = Instance.new("TextButton", tabs)
+        tabButton.Size = UDim2.new(1, 0, 0, 30)
+        tabButton.Text = tabName
+        tabButton.Font = Enum.Font.Gotham
+        tabButton.TextSize = 14
+        tabButton.BackgroundColor3 = theme.Topbar
+        tabButton.TextColor3 = theme.Text
+
+        local page = Instance.new("Frame", content)
+        page.Visible = false
+        page.Size = UDim2.new(1, 0, 1, 0)
+        page.BackgroundTransparency = 1
+        local layout = Instance.new("UIListLayout", page)
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Padding = UDim.new(0, 6)
+
+        tabButton.MouseButton1Click:Connect(function()
+            for _, v in pairs(content:GetChildren()) do
+                if v:IsA("Frame") then v.Visible = false end
+            end
+            page.Visible = true
+        end)
+
+        local tabAPI = {}
+
+        function tabAPI:AddButton(opts)
+            local b = Instance.new("TextButton", page)
+            b.Size = UDim2.new(1, -10, 0, 30)
+            b.Text = opts.Name
+            b.Font = Enum.Font.Gotham
+            b.TextSize = 14
+            b.BackgroundColor3 = theme.Accent
+            b.TextColor3 = theme.Text
+            b.MouseButton1Click:Connect(function()
+                if opts.Callback then opts.Callback() end
+            end)
+        end
+
+        function tabAPI:AddToggle(opts)
+            local state = false
+            local b = Instance.new("TextButton", page)
+            b.Size = UDim2.new(1, -10, 0, 30)
+            b.Text = "[ OFF ] " .. opts.Name
+            b.Font = Enum.Font.Gotham
+            b.TextSize = 14
+            b.BackgroundColor3 = theme.Accent
+            b.TextColor3 = theme.Text
+            b.MouseButton1Click:Connect(function()
+                state = not state
+                b.Text = (state and "[ ON ] " or "[ OFF ] ") .. opts.Name
+                if opts.Callback then opts.Callback(state) end
+            end)
+        end
+
+        return tabAPI
+    end
+
+    return api
+end
+
+return VXHMenu
