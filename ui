@@ -1,5 +1,5 @@
 -- vxh.lua
--- VXH UI Framework
+-- VXH UI Frameworks
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
