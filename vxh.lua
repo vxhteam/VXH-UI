@@ -99,18 +99,25 @@ local function CreateStroke(parent, thickness, color, transparency)
 end
 
 local function CreateShadow(parent, size, transparency)
+    size = size or 6
+    transparency = transparency or 0.5
+
     local shadow = Instance.new("ImageLabel")
     shadow.Name = "Shadow"
     shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-    shadow.ImageColor3 = VXHConfig.Colors.Shadow
-    shadow.ImageTransparency = transparency or 0.8
-    shadow.Size = UDim2.new(1, size, 1, size)
-    shadow.Position = UDim2.new(0, -size/2, 0, -size/2)
+    shadow.Image = "rbxassetid://1316045217"
+    shadow.ImageColor3 = VXHConfig and VXHConfig.Colors.Shadow or Color3.new(0, 0, 0)
+    shadow.ImageTransparency = transparency
+    shadow.ScaleType   = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+    shadow.Size = UDim2.new(1, size * 2, 1, size * 2)
+    shadow.Position = UDim2.new(0, -size, 0, -size)
     shadow.ZIndex = (parent.ZIndex or 1) - 1
-    shadow.Parent = parent.Parent
+    shadow.Parent = parent
+
     return shadow
 end
+
 
 local function PlaySound(soundId, volume, pitch)
     pcall(function()
