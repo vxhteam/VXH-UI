@@ -99,25 +99,18 @@ local function CreateStroke(parent, thickness, color, transparency)
 end
 
 local function CreateShadow(parent, size, transparency)
-    size = size or 6
-    transparency = transparency or 0.5
-
     local shadow = Instance.new("ImageLabel")
     shadow.Name = "Shadow"
     shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://1316045217"
-    shadow.ImageColor3 = VXHConfig and VXHConfig.Colors.Shadow or Color3.new(0, 0, 0)
-    shadow.ImageTransparency = transparency
-    shadow.ScaleType   = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-    shadow.Size     = UDim2.new(1, size * 2, 1, size * 2)
-    shadow.Position = UDim2.new(0, -size, 0, -size)
-    shadow.ZIndex   = (parent.ZIndex or 1) - 1
-    shadow.Parent   = parent
-
+    shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+    shadow.ImageColor3 = VXHConfig.Colors.Shadow
+    shadow.ImageTransparency = transparency or 0.8
+    shadow.Size = UDim2.new(1, size, 1, size)
+    shadow.Position = UDim2.new(0, -size/2, 0, -size/2)
+    shadow.ZIndex = (parent.ZIndex or 1) - 1
+    shadow.Parent = parent.Parent
     return shadow
 end
-
 
 local function PlaySound(soundId, volume, pitch)
     pcall(function()
@@ -789,69 +782,14 @@ function VXH:CreateWindow(config)
             return Toggle
         end
 
-      function Tab:CreateSlider(options)
-    local slider = Instance.new("Frame")
-    slider.Name = "Slider"
-    slider.Size = UDim2.new(1, 0, 0, 50)
-    slider.BackgroundTransparency = 1
-    slider.Parent = self.Content
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.4, 0, 1, 0)
-    label.Position = UDim2.new(0, 10, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = options.Name or "Slider"
-    label.Font = Enum.Font.Gotham
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.TextScaled = true
-    label.Parent = slider
-
-    local sliderFrame = Instance.new("TextButton")
-    sliderFrame.Size = UDim2.new(0.5, 0, 0.3, 0)
-    sliderFrame.Position = UDim2.new(0.45, 0, 0.35, 0)
-    sliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    sliderFrame.Text = ""
-    sliderFrame.AutoButtonColor = false
-    sliderFrame.Parent = slider
-
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new((options.Default - options.Min) / (options.Max - options.Min), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    fill.BorderSizePixel = 0
-    fill.Parent = sliderFrame
-
-    local dragging = false
-
-    local function update(input)
-        local relativeX = math.clamp((input.Position.X - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X, 0, 1)
-        fill.Size = UDim2.new(relativeX, 0, 1, 0)
-
-        local value = math.floor((options.Min + (options.Max - options.Min) * relativeX) / (options.Increment or 1)) * (options.Increment or 1)
-
-        if options.Callback then
-            options.Callback(value)
-        end
-    end
-
-    sliderFrame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-        end
-    end)
-
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            update(input)
-        end
-    end)
-
-    game:GetService("UserInputService").InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-end
-
+        function Tab:CreateSlider(config)
+            local SliderConfig = {
+                Name = config.Name or "Slider",
+                Range = config.Range or {0, 100},
+                Increment = config.Increment or 1,
+                CurrentValue = config.CurrentValue or 0,
+                Flag = config.Flag or "Slider1",
+                Callback = config.Callback or function() end
             }
 
             local Slider = Instance.new("Frame")
