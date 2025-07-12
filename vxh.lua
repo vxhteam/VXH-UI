@@ -1,8 +1,13 @@
+-- VXH Enhanced Framework v2.0.0
+-- Enhanced version of the official VXH UI with toggle functionality
+-- Developer-friendly framework for script hub makers
+
 local VXH = {
     Version = "2.0.0",
     Flags = {},
     Themes = {},
-    Windows = {}
+    Windows = {},
+    IsToggled = false
 }
 
 -- Services
@@ -12,30 +17,50 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
+local SoundService = game:GetService("SoundService")
+local Lighting = game:GetService("Lighting")
 
 -- Variables
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
--- Configuration
+-- Enhanced Configuration
 local VXHConfig = {
-    Version = "1.0.0",
-    Creator = "VXH Team",
-    DefaultFont = Enum.Font.Gotham,
+    Version = "2.0.0",
+    Creator = "VXH Enhanced Team",
+    DefaultFont = Enum.Font.GothamBold,
     DefaultFontSize = 14,
-    AnimationSpeed = 0.3,
+    AnimationSpeed = 0.25,
+    ToggleKey = Enum.KeyCode.Insert,
     Colors = {
-        Primary = Color3.fromRGB(59, 130, 246),
-        Secondary = Color3.fromRGB(99, 102, 241),
+        -- Enhanced Discord-inspired theme
+        Primary = Color3.fromRGB(88, 101, 242),
+        Secondary = Color3.fromRGB(114, 137, 218),
         Tertiary = Color3.fromRGB(139, 92, 246),
-        Background = Color3.fromRGB(30, 30, 30),
-        Card = Color3.fromRGB(40, 40, 40),
+        
+        -- Dark backgrounds
+        Background = Color3.fromRGB(32, 34, 37),
+        Card = Color3.fromRGB(47, 49, 54),
+        Sidebar = Color3.fromRGB(40, 43, 48),
+        
+        -- Text colors
         Text = Color3.fromRGB(255, 255, 255),
-        SubText = Color3.fromRGB(156, 163, 175),
-        Success = Color3.fromRGB(16, 185, 129),
-        Warning = Color3.fromRGB(245, 158, 11),
-        Error = Color3.fromRGB(239, 68, 68),
-        Border = Color3.fromRGB(75, 85, 99)
+        SubText = Color3.fromRGB(181, 186, 193),
+        TextMuted = Color3.fromRGB(114, 118, 125),
+        
+        -- Status colors
+        Success = Color3.fromRGB(87, 242, 135),
+        Warning = Color3.fromRGB(255, 202, 40),
+        Error = Color3.fromRGB(237, 66, 69),
+        
+        -- Interactive elements
+        Border = Color3.fromRGB(79, 84, 92),
+        Hover = Color3.fromRGB(64, 68, 75),
+        Active = Color3.fromRGB(88, 101, 242),
+        
+        -- Special effects
+        Glow = Color3.fromRGB(88, 101, 242),
+        Shadow = Color3.fromRGB(0, 0, 0),
     }
 }
 
@@ -73,12 +98,41 @@ local function CreateStroke(parent, thickness, color, transparency)
     return stroke
 end
 
--- Main VXH Object
+local function CreateShadow(parent, size, transparency)
+    local shadow = Instance.new("ImageLabel")
+    shadow.Name = "Shadow"
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+    shadow.ImageColor3 = VXHConfig.Colors.Shadow
+    shadow.ImageTransparency = transparency or 0.8
+    shadow.Size = UDim2.new(1, size, 1, size)
+    shadow.Position = UDim2.new(0, -size/2, 0, -size/2)
+    shadow.ZIndex = (parent.ZIndex or 1) - 1
+    shadow.Parent = parent.Parent
+    return shadow
+end
+
+local function PlaySound(soundId, volume, pitch)
+    pcall(function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = soundId or "rbxasset://sounds/electronicpingshort.wav"
+        sound.Volume = volume or 0.3
+        sound.Pitch = pitch or 1
+        sound.Parent = SoundService
+        sound:Play()
+        
+        sound.Ended:Connect(function()
+            sound:Destroy()
+        end)
+    end)
+end
+
+-- Main VXH Framework
 function VXH:CreateWindow(config)
     local WindowConfig = {
-        Name = config.Name or "VXH Script Hub",
-        LoadingTitle = config.LoadingTitle or "VXH Interface Suite",
-        LoadingSubtitle = config.LoadingSubtitle or "by VXH Team",
+        Name = config.Name or "VXH Framework",
+        LoadingTitle = config.LoadingTitle or "VXH Enhanced Interface",
+        LoadingSubtitle = config.LoadingSubtitle or "by VXH Enhanced Team",
         ConfigurationSaving = config.ConfigurationSaving or {
             Enabled = false,
             FolderName = "VXH",
@@ -99,7 +153,6 @@ function VXH:CreateWindow(config)
     }
 
     local Window = {}
-    local WindowFrame = {}
     local Tabs = {}
     local CurrentTab = nil
 
@@ -110,99 +163,302 @@ function VXH:CreateWindow(config)
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- Main Frame
+    -- Blur Effect
+    local BlurEffect = Instance.new("BlurEffect")
+    BlurEffect.Size = 0
+    BlurEffect.Parent = Lighting
+
+    -- Toggle Button (Always visible)
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Name = "VXHToggleButton"
+    ToggleButton.Size = UDim2.new(0, 65, 0, 65)
+    ToggleButton.Position = UDim2.new(0, 25, 0, 25)
+    ToggleButton.BackgroundColor3 = VXHConfig.Colors.Primary
+    ToggleButton.BorderSizePixel = 0
+    ToggleButton.Text = ""
+    ToggleButton.ZIndex = 1000
+    ToggleButton.Active = true
+    ToggleButton.Draggable = true
+    ToggleButton.Parent = ScreenGui
+
+    CreateCorner(ToggleButton, 32)
+    CreateStroke(ToggleButton, 2, VXHConfig.Colors.Border, 0.5)
+    CreateShadow(ToggleButton, 12, 0.7)
+
+    -- Toggle Button Gradient
+    CreateGradient(ToggleButton, {
+        ColorSequenceKeypoint.new(0, VXHConfig.Colors.Primary),
+        ColorSequenceKeypoint.new(0.5, VXHConfig.Colors.Secondary),
+        ColorSequenceKeypoint.new(1, VXHConfig.Colors.Tertiary)
+    }, 45)
+
+    -- Toggle Button Icon
+    local ToggleIcon = Instance.new("TextLabel")
+    ToggleIcon.Name = "ToggleIcon"
+    ToggleIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
+    ToggleIcon.Position = UDim2.new(0.1, 0, 0.1, 0)
+    ToggleIcon.BackgroundTransparency = 1
+    ToggleIcon.Text = "VXH"
+    ToggleIcon.TextColor3 = VXHConfig.Colors.Text
+    ToggleIcon.TextSize = 18
+    ToggleIcon.Font = VXHConfig.DefaultFont
+    ToggleIcon.ZIndex = 1001
+    ToggleIcon.Parent = ToggleButton
+
+    -- Status Indicator
+    local StatusDot = Instance.new("Frame")
+    StatusDot.Name = "StatusDot"
+    StatusDot.Size = UDim2.new(0, 14, 0, 14)
+    StatusDot.Position = UDim2.new(1, -10, 0, -4)
+    StatusDot.BackgroundColor3 = VXHConfig.Colors.Success
+    StatusDot.BorderSizePixel = 0
+    StatusDot.ZIndex = 1002
+    StatusDot.Parent = ToggleButton
+
+    CreateCorner(StatusDot, 7)
+    CreateStroke(StatusDot, 2, VXHConfig.Colors.Text, 0)
+
+    -- Main Frame (Initially hidden)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, 580, 0, 460)
-    MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
+    MainFrame.Size = UDim2.new(0, 680, 0, 520)
+    MainFrame.Position = UDim2.new(0.5, -340, 0.5, -260)
     MainFrame.BackgroundColor3 = VXHConfig.Colors.Background
     MainFrame.BorderSizePixel = 0
     MainFrame.Parent = ScreenGui
     MainFrame.Active = true
     MainFrame.Draggable = true
+    MainFrame.Visible = false
+    MainFrame.ZIndex = 10
 
-    CreateCorner(MainFrame, 12)
-    CreateStroke(MainFrame, 1, VXHConfig.Colors.Border, 0.5)
+    CreateCorner(MainFrame, 16)
+    CreateStroke(MainFrame, 1, VXHConfig.Colors.Border, 0.3)
+    CreateShadow(MainFrame, 20, 0.6)
 
     -- Title Bar
     local TitleBar = Instance.new("Frame")
     TitleBar.Name = "TitleBar"
-    TitleBar.Size = UDim2.new(1, 0, 0, 50)
+    TitleBar.Size = UDim2.new(1, 0, 0, 65)
     TitleBar.Position = UDim2.new(0, 0, 0, 0)
     TitleBar.BackgroundColor3 = VXHConfig.Colors.Card
     TitleBar.BorderSizePixel = 0
+    TitleBar.ZIndex = 11
     TitleBar.Parent = MainFrame
 
-    CreateCorner(TitleBar, 12)
+    CreateCorner(TitleBar, 16)
     CreateGradient(TitleBar, {
         ColorSequenceKeypoint.new(0, VXHConfig.Colors.Primary),
-        ColorSequenceKeypoint.new(1, VXHConfig.Colors.Secondary)
+        ColorSequenceKeypoint.new(0.3, VXHConfig.Colors.Secondary),
+        ColorSequenceKeypoint.new(0.7, VXHConfig.Colors.Tertiary),
+        ColorSequenceKeypoint.new(1, VXHConfig.Colors.Primary)
     }, 45)
 
-    -- VXH Logo/Title
+    -- Title
     local Title = Instance.new("TextLabel")
     Title.Name = "Title"
-    Title.Size = UDim2.new(1, -100, 1, 0)
-    Title.Position = UDim2.new(0, 20, 0, 0)
+    Title.Size = UDim2.new(0, 400, 0, 28)
+    Title.Position = UDim2.new(0, 20, 0, 8)
     Title.BackgroundTransparency = 1
-    Title.Text = "VXH " .. WindowConfig.Name
+    Title.Text = WindowConfig.Name
     Title.TextColor3 = VXHConfig.Colors.Text
-    Title.TextScaled = true
-    Title.TextWrapped = true
+    Title.TextSize = 20
     Title.Font = VXHConfig.DefaultFont
     Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.ZIndex = 12
     Title.Parent = TitleBar
+
+    -- Version Label
+    local Version = Instance.new("TextLabel")
+    Version.Name = "Version"
+    Version.Size = UDim2.new(0, 300, 0, 18)
+    Version.Position = UDim2.new(0, 20, 0, 35)
+    Version.BackgroundTransparency = 1
+    Version.Text = "v" .. VXHConfig.Version .. " • Enhanced Framework"
+    Version.TextColor3 = VXHConfig.Colors.SubText
+    Version.TextSize = 12
+    Version.Font = Enum.Font.Gotham
+    Version.TextXAlignment = Enum.TextXAlignment.Left
+    Version.ZIndex = 12
+    Version.Parent = TitleBar
 
     -- Close Button
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "CloseButton"
-    CloseButton.Size = UDim2.new(0, 30, 0, 30)
-    CloseButton.Position = UDim2.new(1, -40, 0, 10)
+    CloseButton.Size = UDim2.new(0, 35, 0, 35)
+    CloseButton.Position = UDim2.new(1, -45, 0, 15)
     CloseButton.BackgroundColor3 = VXHConfig.Colors.Error
     CloseButton.BorderSizePixel = 0
     CloseButton.Text = "×"
     CloseButton.TextColor3 = VXHConfig.Colors.Text
-    CloseButton.TextScaled = true
+    CloseButton.TextSize = 20
     CloseButton.Font = VXHConfig.DefaultFont
+    CloseButton.ZIndex = 13
     CloseButton.Parent = TitleBar
 
-    CreateCorner(CloseButton, 6)
+    CreateCorner(CloseButton, 8)
 
-    CloseButton.MouseButton1Click:Connect(function()
-        ScreenGui:Destroy()
-    end)
+    -- Sidebar
+    local Sidebar = Instance.new("Frame")
+    Sidebar.Name = "Sidebar"
+    Sidebar.Size = UDim2.new(0, 200, 1, -75)
+    Sidebar.Position = UDim2.new(0, 10, 0, 75)
+    Sidebar.BackgroundColor3 = VXHConfig.Colors.Sidebar
+    Sidebar.BorderSizePixel = 0
+    Sidebar.ZIndex = 11
+    Sidebar.Parent = MainFrame
 
-    -- Tab Container
-    local TabContainer = Instance.new("Frame")
-    TabContainer.Name = "TabContainer"
-    TabContainer.Size = UDim2.new(0, 160, 1, -60)
-    TabContainer.Position = UDim2.new(0, 10, 0, 60)
-    TabContainer.BackgroundTransparency = 1
-    TabContainer.Parent = MainFrame
+    CreateCorner(Sidebar, 14)
+    CreateStroke(Sidebar, 1, VXHConfig.Colors.Border, 0.5)
 
     -- Tab List
     local TabList = Instance.new("ScrollingFrame")
     TabList.Name = "TabList"
-    TabList.Size = UDim2.new(1, 0, 1, 0)
-    TabList.Position = UDim2.new(0, 0, 0, 0)
+    TabList.Size = UDim2.new(1, -10, 1, -10)
+    TabList.Position = UDim2.new(0, 5, 0, 5)
     TabList.BackgroundTransparency = 1
     TabList.BorderSizePixel = 0
-    TabList.ScrollBarThickness = 6
+    TabList.ScrollBarThickness = 4
     TabList.ScrollBarImageColor3 = VXHConfig.Colors.Primary
-    TabList.Parent = TabContainer
+    TabList.ZIndex = 12
+    TabList.Parent = Sidebar
 
     local TabListLayout = Instance.new("UIListLayout")
     TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
     TabListLayout.Padding = UDim.new(0, 8)
     TabListLayout.Parent = TabList
 
+    -- Content Area
+    local ContentArea = Instance.new("Frame")
+    ContentArea.Name = "ContentArea"
+    ContentArea.Size = UDim2.new(1, -220, 1, -75)
+    ContentArea.Position = UDim2.new(0, 210, 0, 75)
+    ContentArea.BackgroundColor3 = VXHConfig.Colors.Card
+    ContentArea.BorderSizePixel = 0
+    ContentArea.ZIndex = 11
+    ContentArea.Parent = MainFrame
+
+    CreateCorner(ContentArea, 14)
+    CreateStroke(ContentArea, 1, VXHConfig.Colors.Border, 0.5)
+
     -- Content Container
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Name = "ContentContainer"
-    ContentContainer.Size = UDim2.new(1, -180, 1, -60)
-    ContentContainer.Position = UDim2.new(0, 170, 0, 60)
+    ContentContainer.Size = UDim2.new(1, 0, 1, 0)
+    ContentContainer.Position = UDim2.new(0, 0, 0, 0)
     ContentContainer.BackgroundTransparency = 1
-    ContentContainer.Parent = MainFrame
+    ContentContainer.ZIndex = 12
+    ContentContainer.Parent = ContentArea
+
+    -- Toggle Functionality
+    local function ToggleWindow()
+        VXH.IsToggled = not VXH.IsToggled
+        
+        if VXH.IsToggled then
+            -- Show window
+            PlaySound("rbxasset://sounds/popup_open.wav", 0.4)
+            MainFrame.Visible = true
+            MainFrame.Size = UDim2.new(0, 0, 0, 0)
+            MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+            
+            CreateTween(MainFrame, {
+                Size = UDim2.new(0, 680, 0, 520),
+                Position = UDim2.new(0.5, -340, 0.5, -260)
+            }, VXHConfig.AnimationSpeed * 1.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out):Play()
+            
+            CreateTween(ToggleButton, {
+                BackgroundColor3 = VXHConfig.Colors.Success,
+                Rotation = 180
+            }, VXHConfig.AnimationSpeed):Play()
+            
+            CreateTween(BlurEffect, {Size = 6}, VXHConfig.AnimationSpeed):Play()
+            
+            ToggleIcon.Text = "✓"
+            StatusDot.BackgroundColor3 = VXHConfig.Colors.Success
+            
+        else
+            -- Hide window
+            PlaySound("rbxasset://sounds/popup_close.wav", 0.4)
+            CreateTween(MainFrame, {
+                Size = UDim2.new(0, 0, 0, 0),
+                Position = UDim2.new(0.5, 0, 0.5, 0)
+            }, VXHConfig.AnimationSpeed, Enum.EasingStyle.Back, Enum.EasingDirection.In):Play()
+            
+            CreateTween(ToggleButton, {
+                BackgroundColor3 = VXHConfig.Colors.Primary,
+                Rotation = 0
+            }, VXHConfig.AnimationSpeed):Play()
+            
+            CreateTween(BlurEffect, {Size = 0}, VXHConfig.AnimationSpeed):Play()
+            
+            ToggleIcon.Text = "VXH"
+            StatusDot.BackgroundColor3 = VXHConfig.Colors.Warning
+            
+            wait(VXHConfig.AnimationSpeed)
+            MainFrame.Visible = false
+        end
+    end
+
+    -- Event Connections
+    ToggleButton.MouseButton1Click:Connect(ToggleWindow)
+    
+    CloseButton.MouseButton1Click:Connect(function()
+        VXH.IsToggled = false
+        PlaySound("rbxasset://sounds/popup_close.wav", 0.4)
+        
+        CreateTween(MainFrame, {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0)
+        }, VXHConfig.AnimationSpeed, Enum.EasingStyle.Back, Enum.EasingDirection.In):Play()
+        
+        CreateTween(ToggleButton, {
+            BackgroundColor3 = VXHConfig.Colors.Primary,
+            Rotation = 0
+        }, VXHConfig.AnimationSpeed):Play()
+        
+        CreateTween(BlurEffect, {Size = 0}, VXHConfig.AnimationSpeed):Play()
+        
+        ToggleIcon.Text = "VXH"
+        StatusDot.BackgroundColor3 = VXHConfig.Colors.Warning
+        
+        wait(VXHConfig.AnimationSpeed)
+        MainFrame.Visible = false
+    end)
+
+    -- Keyboard shortcut
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.KeyCode == VXHConfig.ToggleKey then
+            ToggleWindow()
+        end
+    end)
+
+    -- Hover effects
+    ToggleButton.MouseEnter:Connect(function()
+        CreateTween(ToggleButton, {
+            Size = UDim2.new(0, 70, 0, 70)
+        }, 0.1):Play()
+    end)
+
+    ToggleButton.MouseLeave:Connect(function()
+        CreateTween(ToggleButton, {
+            Size = UDim2.new(0, 65, 0, 65)
+        }, 0.1):Play()
+    end)
+
+    CloseButton.MouseEnter:Connect(function()
+        CreateTween(CloseButton, {
+            BackgroundColor3 = Color3.fromRGB(255, 100, 100),
+            Size = UDim2.new(0, 38, 0, 38)
+        }, 0.1):Play()
+    end)
+
+    CloseButton.MouseLeave:Connect(function()
+        CreateTween(CloseButton, {
+            BackgroundColor3 = VXHConfig.Colors.Error,
+            Size = UDim2.new(0, 35, 0, 35)
+        }, 0.1):Play()
+    end)
 
     -- Window Methods
     function Window:CreateTab(name, image)
@@ -216,60 +472,66 @@ function VXH:CreateWindow(config)
         -- Tab Button
         local TabButton = Instance.new("TextButton")
         TabButton.Name = "TabButton_" .. name
-        TabButton.Size = UDim2.new(1, 0, 0, 40)
-        TabButton.BackgroundColor3 = VXHConfig.Colors.Card
+        TabButton.Size = UDim2.new(1, 0, 0, 50)
+        TabButton.BackgroundColor3 = VXHConfig.Colors.Background
         TabButton.BorderSizePixel = 0
         TabButton.Text = ""
+        TabButton.ZIndex = 13
         TabButton.Parent = TabList
 
-        CreateCorner(TabButton, 8)
+        CreateCorner(TabButton, 12)
         CreateStroke(TabButton, 1, VXHConfig.Colors.Border, 0.7)
 
         -- Tab Icon
-        local TabIcon = Instance.new("ImageLabel")
+        local TabIcon = Instance.new("TextLabel")
         TabIcon.Name = "TabIcon"
-        TabIcon.Size = UDim2.new(0, 20, 0, 20)
-        TabIcon.Position = UDim2.new(0, 10, 0, 10)
+        TabIcon.Size = UDim2.new(0, 28, 0, 28)
+        TabIcon.Position = UDim2.new(0, 12, 0, 11)
         TabIcon.BackgroundTransparency = 1
-        TabIcon.Image = image or "rbxassetid://4483345998"
-        TabIcon.ImageColor3 = VXHConfig.Colors.SubText
+        TabIcon.Text = image or "📋"
+        TabIcon.TextColor3 = VXHConfig.Colors.SubText
+        TabIcon.TextSize = 20
+        TabIcon.Font = VXHConfig.DefaultFont
+        TabIcon.ZIndex = 14
         TabIcon.Parent = TabButton
 
         -- Tab Label
         local TabLabel = Instance.new("TextLabel")
         TabLabel.Name = "TabLabel"
-        TabLabel.Size = UDim2.new(1, -40, 1, 0)
-        TabLabel.Position = UDim2.new(0, 35, 0, 0)
+        TabLabel.Size = UDim2.new(1, -50, 0, 28)
+        TabLabel.Position = UDim2.new(0, 45, 0, 11)
         TabLabel.BackgroundTransparency = 1
         TabLabel.Text = name
         TabLabel.TextColor3 = VXHConfig.Colors.SubText
-        TabLabel.TextScaled = true
+        TabLabel.TextSize = 15
         TabLabel.Font = VXHConfig.DefaultFont
         TabLabel.TextXAlignment = Enum.TextXAlignment.Left
+        TabLabel.ZIndex = 14
         TabLabel.Parent = TabButton
 
         -- Tab Content
         local TabContent = Instance.new("ScrollingFrame")
         TabContent.Name = "TabContent_" .. name
-        TabContent.Size = UDim2.new(1, 0, 1, 0)
-        TabContent.Position = UDim2.new(0, 0, 0, 0)
+        TabContent.Size = UDim2.new(1, -10, 1, -10)
+        TabContent.Position = UDim2.new(0, 5, 0, 5)
         TabContent.BackgroundTransparency = 1
         TabContent.BorderSizePixel = 0
-        TabContent.ScrollBarThickness = 6
+        TabContent.ScrollBarThickness = 4
         TabContent.ScrollBarImageColor3 = VXHConfig.Colors.Primary
         TabContent.Visible = false
+        TabContent.ZIndex = 13
         TabContent.Parent = ContentContainer
 
         local TabContentLayout = Instance.new("UIListLayout")
         TabContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        TabContentLayout.Padding = UDim.new(0, 8)
+        TabContentLayout.Padding = UDim.new(0, 10)
         TabContentLayout.Parent = TabContent
 
         local TabContentPadding = Instance.new("UIPadding")
-        TabContentPadding.PaddingTop = UDim.new(0, 10)
-        TabContentPadding.PaddingBottom = UDim.new(0, 10)
-        TabContentPadding.PaddingLeft = UDim.new(0, 10)
-        TabContentPadding.PaddingRight = UDim.new(0, 10)
+        TabContentPadding.PaddingTop = UDim.new(0, 15)
+        TabContentPadding.PaddingBottom = UDim.new(0, 15)
+        TabContentPadding.PaddingLeft = UDim.new(0, 15)
+        TabContentPadding.PaddingRight = UDim.new(0, 15)
         TabContentPadding.Parent = TabContent
 
         -- Tab Selection
@@ -281,8 +543,8 @@ function VXH:CreateWindow(config)
                 -- Reset previous tab button
                 for _, child in pairs(TabList:GetChildren()) do
                     if child.Name == "TabButton_" .. CurrentTab.Name then
-                        CreateTween(child, {BackgroundColor3 = VXHConfig.Colors.Card}):Play()
-                        CreateTween(child.TabIcon, {ImageColor3 = VXHConfig.Colors.SubText}):Play()
+                        CreateTween(child, {BackgroundColor3 = VXHConfig.Colors.Background}):Play()
+                        CreateTween(child.TabIcon, {TextColor3 = VXHConfig.Colors.SubText}):Play()
                         CreateTween(child.TabLabel, {TextColor3 = VXHConfig.Colors.SubText}):Play()
                         break
                     end
@@ -295,13 +557,33 @@ function VXH:CreateWindow(config)
 
             -- Highlight current tab button
             CreateTween(TabButton, {BackgroundColor3 = VXHConfig.Colors.Primary}):Play()
-            CreateTween(TabIcon, {ImageColor3 = VXHConfig.Colors.Text}):Play()
+            CreateTween(TabIcon, {TextColor3 = VXHConfig.Colors.Text}):Play()
             CreateTween(TabLabel, {TextColor3 = VXHConfig.Colors.Text}):Play()
         end
 
-        TabButton.MouseButton1Click:Connect(SelectTab)
+        TabButton.MouseButton1Click:Connect(function()
+            PlaySound("rbxasset://sounds/electronicpingshort.wav", 0.2)
+            SelectTab()
+        end)
 
-        -- If this is the first tab, select it
+        -- Hover effects
+        TabButton.MouseEnter:Connect(function()
+            if CurrentTab ~= Tab then
+                CreateTween(TabButton, {BackgroundColor3 = VXHConfig.Colors.Hover}):Play()
+                CreateTween(TabIcon, {TextColor3 = VXHConfig.Colors.Text}):Play()
+                CreateTween(TabLabel, {TextColor3 = VXHConfig.Colors.Text}):Play()
+            end
+        end)
+
+        TabButton.MouseLeave:Connect(function()
+            if CurrentTab ~= Tab then
+                CreateTween(TabButton, {BackgroundColor3 = VXHConfig.Colors.Background}):Play()
+                CreateTween(TabIcon, {TextColor3 = VXHConfig.Colors.SubText}):Play()
+                CreateTween(TabLabel, {TextColor3 = VXHConfig.Colors.SubText}):Play()
+            end
+        end)
+
+        -- Select first tab by default
         if not CurrentTab then
             SelectTab()
         end
@@ -310,9 +592,10 @@ function VXH:CreateWindow(config)
         function Tab:CreateSection(name)
             local Section = Instance.new("Frame")
             Section.Name = "Section_" .. name
-            Section.Size = UDim2.new(1, 0, 0, 30)
+            Section.Size = UDim2.new(1, 0, 0, 40)
             Section.BackgroundTransparency = 1
             Section.LayoutOrder = #Tab.Elements + 1
+            Section.ZIndex = 14
             Section.Parent = TabContent
 
             local SectionLabel = Instance.new("TextLabel")
@@ -321,10 +604,23 @@ function VXH:CreateWindow(config)
             SectionLabel.BackgroundTransparency = 1
             SectionLabel.Text = name
             SectionLabel.TextColor3 = VXHConfig.Colors.Text
-            SectionLabel.TextScaled = true
+            SectionLabel.TextSize = 18
             SectionLabel.Font = VXHConfig.DefaultFont
             SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
+            SectionLabel.ZIndex = 15
             SectionLabel.Parent = Section
+
+            -- Add underline
+            local Underline = Instance.new("Frame")
+            Underline.Name = "Underline"
+            Underline.Size = UDim2.new(0, 60, 0, 2)
+            Underline.Position = UDim2.new(0, 0, 1, -5)
+            Underline.BackgroundColor3 = VXHConfig.Colors.Primary
+            Underline.BorderSizePixel = 0
+            Underline.ZIndex = 15
+            Underline.Parent = Section
+
+            CreateCorner(Underline, 1)
 
             table.insert(Tab.Elements, Section)
             return Section
@@ -338,24 +634,57 @@ function VXH:CreateWindow(config)
 
             local Button = Instance.new("TextButton")
             Button.Name = "Button_" .. ButtonConfig.Name
-            Button.Size = UDim2.new(1, 0, 0, 40)
-            Button.BackgroundColor3 = VXHConfig.Colors.Card
+            Button.Size = UDim2.new(1, 0, 0, 50)
+            Button.BackgroundColor3 = VXHConfig.Colors.Background
             Button.BorderSizePixel = 0
             Button.Text = ButtonConfig.Name
             Button.TextColor3 = VXHConfig.Colors.Text
-            Button.TextScaled = true
+            Button.TextSize = 16
             Button.Font = VXHConfig.DefaultFont
             Button.LayoutOrder = #Tab.Elements + 1
+            Button.ZIndex = 14
             Button.Parent = TabContent
 
-            CreateCorner(Button, 8)
+            CreateCorner(Button, 12)
             CreateStroke(Button, 1, VXHConfig.Colors.Border, 0.7)
 
+            -- Enhanced gradient
+            CreateGradient(Button, {
+                ColorSequenceKeypoint.new(0, VXHConfig.Colors.Background),
+                ColorSequenceKeypoint.new(1, VXHConfig.Colors.Card)
+            }, 90)
+
+            -- Button effects
             Button.MouseButton1Click:Connect(function()
-                CreateTween(Button, {BackgroundColor3 = VXHConfig.Colors.Primary}):Play()
-                wait(0.1)
-                CreateTween(Button, {BackgroundColor3 = VXHConfig.Colors.Card}):Play()
+                PlaySound("rbxasset://sounds/electronicpingshort.wav", 0.4)
+                
+                CreateTween(Button, {
+                    BackgroundColor3 = VXHConfig.Colors.Success,
+                    TextColor3 = VXHConfig.Colors.Background
+                }, 0.1):Play()
+                
+                wait(0.15)
+                
+                CreateTween(Button, {
+                    BackgroundColor3 = VXHConfig.Colors.Background,
+                    TextColor3 = VXHConfig.Colors.Text
+                }, 0.1):Play()
+                
                 ButtonConfig.Callback()
+            end)
+
+            Button.MouseEnter:Connect(function()
+                CreateTween(Button, {
+                    BackgroundColor3 = VXHConfig.Colors.Hover,
+                    Size = UDim2.new(1, 0, 0, 53)
+                }, 0.1):Play()
+            end)
+
+            Button.MouseLeave:Connect(function()
+                CreateTween(Button, {
+                    BackgroundColor3 = VXHConfig.Colors.Background,
+                    Size = UDim2.new(1, 0, 0, 50)
+                }, 0.1):Play()
             end)
 
             table.insert(Tab.Elements, Button)
@@ -372,60 +701,81 @@ function VXH:CreateWindow(config)
 
             local Toggle = Instance.new("Frame")
             Toggle.Name = "Toggle_" .. ToggleConfig.Name
-            Toggle.Size = UDim2.new(1, 0, 0, 40)
-            Toggle.BackgroundColor3 = VXHConfig.Colors.Card
+            Toggle.Size = UDim2.new(1, 0, 0, 50)
+            Toggle.BackgroundColor3 = VXHConfig.Colors.Background
             Toggle.BorderSizePixel = 0
             Toggle.LayoutOrder = #Tab.Elements + 1
+            Toggle.ZIndex = 14
             Toggle.Parent = TabContent
 
-            CreateCorner(Toggle, 8)
+            CreateCorner(Toggle, 12)
             CreateStroke(Toggle, 1, VXHConfig.Colors.Border, 0.7)
 
             local ToggleLabel = Instance.new("TextLabel")
             ToggleLabel.Name = "ToggleLabel"
-            ToggleLabel.Size = UDim2.new(1, -50, 1, 0)
-            ToggleLabel.Position = UDim2.new(0, 10, 0, 0)
+            ToggleLabel.Size = UDim2.new(1, -70, 1, 0)
+            ToggleLabel.Position = UDim2.new(0, 15, 0, 0)
             ToggleLabel.BackgroundTransparency = 1
             ToggleLabel.Text = ToggleConfig.Name
             ToggleLabel.TextColor3 = VXHConfig.Colors.Text
-            ToggleLabel.TextScaled = true
+            ToggleLabel.TextSize = 16
             ToggleLabel.Font = VXHConfig.DefaultFont
             ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            ToggleLabel.ZIndex = 15
             ToggleLabel.Parent = Toggle
 
             local ToggleButton = Instance.new("TextButton")
             ToggleButton.Name = "ToggleButton"
-            ToggleButton.Size = UDim2.new(0, 30, 0, 20)
-            ToggleButton.Position = UDim2.new(1, -40, 0, 10)
+            ToggleButton.Size = UDim2.new(0, 50, 0, 28)
+            ToggleButton.Position = UDim2.new(1, -60, 0, 11)
             ToggleButton.BackgroundColor3 = ToggleConfig.CurrentValue and VXHConfig.Colors.Success or VXHConfig.Colors.Border
             ToggleButton.BorderSizePixel = 0
             ToggleButton.Text = ""
+            ToggleButton.ZIndex = 15
             ToggleButton.Parent = Toggle
 
-            CreateCorner(ToggleButton, 10)
+            CreateCorner(ToggleButton, 14)
 
             local ToggleIndicator = Instance.new("Frame")
             ToggleIndicator.Name = "ToggleIndicator"
-            ToggleIndicator.Size = UDim2.new(0, 16, 0, 16)
-            ToggleIndicator.Position = ToggleConfig.CurrentValue and UDim2.new(0, 12, 0, 2) or UDim2.new(0, 2, 0, 2)
+            ToggleIndicator.Size = UDim2.new(0, 24, 0, 24)
+            ToggleIndicator.Position = ToggleConfig.CurrentValue and UDim2.new(0, 24, 0, 2) or UDim2.new(0, 2, 0, 2)
             ToggleIndicator.BackgroundColor3 = VXHConfig.Colors.Text
             ToggleIndicator.BorderSizePixel = 0
+            ToggleIndicator.ZIndex = 16
             ToggleIndicator.Parent = ToggleButton
 
-            CreateCorner(ToggleIndicator, 8)
+            CreateCorner(ToggleIndicator, 12)
+            CreateShadow(ToggleIndicator, 4, 0.3)
 
             ToggleButton.MouseButton1Click:Connect(function()
                 ToggleConfig.CurrentValue = not ToggleConfig.CurrentValue
                 
+                PlaySound("rbxasset://sounds/electronicpingshort.wav", 0.3)
+                
                 CreateTween(ToggleButton, {
                     BackgroundColor3 = ToggleConfig.CurrentValue and VXHConfig.Colors.Success or VXHConfig.Colors.Border
-                }):Play()
+                }, 0.15):Play()
                 
                 CreateTween(ToggleIndicator, {
-                    Position = ToggleConfig.CurrentValue and UDim2.new(0, 12, 0, 2) or UDim2.new(0, 2, 0, 2)
-                }):Play()
+                    Position = ToggleConfig.CurrentValue and UDim2.new(0, 24, 0, 2) or UDim2.new(0, 2, 0, 2)
+                }, 0.15):Play()
                 
                 ToggleConfig.Callback(ToggleConfig.CurrentValue)
+            end)
+
+            Toggle.MouseEnter:Connect(function()
+                CreateTween(Toggle, {
+                    BackgroundColor3 = VXHConfig.Colors.Hover,
+                    Size = UDim2.new(1, 0, 0, 53)
+                }, 0.1):Play()
+            end)
+
+            Toggle.MouseLeave:Connect(function()
+                CreateTween(Toggle, {
+                    BackgroundColor3 = VXHConfig.Colors.Background,
+                    Size = UDim2.new(1, 0, 0, 50)
+                }, 0.1):Play()
             end)
 
             table.insert(Tab.Elements, Toggle)
@@ -437,7 +787,6 @@ function VXH:CreateWindow(config)
                 Name = config.Name or "Slider",
                 Range = config.Range or {0, 100},
                 Increment = config.Increment or 1,
-                Suffix = config.Suffix or "",
                 CurrentValue = config.CurrentValue or 0,
                 Flag = config.Flag or "Slider1",
                 Callback = config.Callback or function() end
@@ -445,48 +794,54 @@ function VXH:CreateWindow(config)
 
             local Slider = Instance.new("Frame")
             Slider.Name = "Slider_" .. SliderConfig.Name
-            Slider.Size = UDim2.new(1, 0, 0, 50)
-            Slider.BackgroundColor3 = VXHConfig.Colors.Card
+            Slider.Size = UDim2.new(1, 0, 0, 70)
+            Slider.BackgroundColor3 = VXHConfig.Colors.Background
             Slider.BorderSizePixel = 0
             Slider.LayoutOrder = #Tab.Elements + 1
+            Slider.ZIndex = 14
             Slider.Parent = TabContent
 
-            CreateCorner(Slider, 8)
+            CreateCorner(Slider, 12)
             CreateStroke(Slider, 1, VXHConfig.Colors.Border, 0.7)
 
             local SliderLabel = Instance.new("TextLabel")
             SliderLabel.Name = "SliderLabel"
-            SliderLabel.Size = UDim2.new(1, -100, 0, 20)
-            SliderLabel.Position = UDim2.new(0, 10, 0, 5)
+            SliderLabel.Size = UDim2.new(1, -20, 0, 25)
+            SliderLabel.Position = UDim2.new(0, 15, 0, 5)
             SliderLabel.BackgroundTransparency = 1
             SliderLabel.Text = SliderConfig.Name
             SliderLabel.TextColor3 = VXHConfig.Colors.Text
-            SliderLabel.TextScaled = true
+            SliderLabel.TextSize = 16
             SliderLabel.Font = VXHConfig.DefaultFont
             SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+            SliderLabel.ZIndex = 15
             SliderLabel.Parent = Slider
 
             local SliderValue = Instance.new("TextLabel")
             SliderValue.Name = "SliderValue"
-            SliderValue.Size = UDim2.new(0, 80, 0, 20)
-            SliderValue.Position = UDim2.new(1, -90, 0, 5)
-            SliderValue.BackgroundTransparency = 1
-            SliderValue.Text = SliderConfig.CurrentValue .. SliderConfig.Suffix
-            SliderValue.TextColor3 = VXHConfig.Colors.Primary
-            SliderValue.TextScaled = true
+            SliderValue.Size = UDim2.new(0, 60, 0, 25)
+            SliderValue.Position = UDim2.new(1, -75, 0, 5)
+            SliderValue.BackgroundColor3 = VXHConfig.Colors.Primary
+            SliderValue.BorderSizePixel = 0
+            SliderValue.Text = tostring(SliderConfig.CurrentValue)
+            SliderValue.TextColor3 = VXHConfig.Colors.Text
+            SliderValue.TextSize = 14
             SliderValue.Font = VXHConfig.DefaultFont
-            SliderValue.TextXAlignment = Enum.TextXAlignment.Right
+            SliderValue.ZIndex = 15
             SliderValue.Parent = Slider
+
+            CreateCorner(SliderValue, 6)
 
             local SliderTrack = Instance.new("Frame")
             SliderTrack.Name = "SliderTrack"
-            SliderTrack.Size = UDim2.new(1, -20, 0, 4)
-            SliderTrack.Position = UDim2.new(0, 10, 0, 30)
+            SliderTrack.Size = UDim2.new(1, -30, 0, 6)
+            SliderTrack.Position = UDim2.new(0, 15, 0, 45)
             SliderTrack.BackgroundColor3 = VXHConfig.Colors.Border
             SliderTrack.BorderSizePixel = 0
+            SliderTrack.ZIndex = 15
             SliderTrack.Parent = Slider
 
-            CreateCorner(SliderTrack, 2)
+            CreateCorner(SliderTrack, 3)
 
             local SliderFill = Instance.new("Frame")
             SliderFill.Name = "SliderFill"
@@ -494,828 +849,200 @@ function VXH:CreateWindow(config)
             SliderFill.Position = UDim2.new(0, 0, 0, 0)
             SliderFill.BackgroundColor3 = VXHConfig.Colors.Primary
             SliderFill.BorderSizePixel = 0
+            SliderFill.ZIndex = 16
             SliderFill.Parent = SliderTrack
 
-            CreateCorner(SliderFill, 2)
+            CreateCorner(SliderFill, 3)
 
             local SliderButton = Instance.new("TextButton")
             SliderButton.Name = "SliderButton"
-            SliderButton.Size = UDim2.new(1, 0, 0, 30)
-            SliderButton.Position = UDim2.new(0, 0, 0, 20)
-            SliderButton.BackgroundTransparency = 1
+            SliderButton.Size = UDim2.new(0, 16, 0, 16)
+            SliderButton.Position = UDim2.new(0, -5, 0, -5)
+            SliderButton.BackgroundColor3 = VXHConfig.Colors.Text
+            SliderButton.BorderSizePixel = 0
             SliderButton.Text = ""
-            SliderButton.Parent = Slider
+            SliderButton.ZIndex = 17
+            SliderButton.Parent = SliderFill
 
+            CreateCorner(SliderButton, 8)
+            CreateShadow(SliderButton, 4, 0.3)
+
+            -- Slider functionality
             local function UpdateSlider(value)
-                value = math.clamp(value, SliderConfig.Range[1], SliderConfig.Range[2])
-                value = math.floor(value / SliderConfig.Increment) * SliderConfig.Increment
+                local percent = (value - SliderConfig.Range[1]) / (SliderConfig.Range[2] - SliderConfig.Range[1])
+                SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+                SliderValue.Text = tostring(value)
                 SliderConfig.CurrentValue = value
-                
-                local percentage = (value - SliderConfig.Range[1]) / (SliderConfig.Range[2] - SliderConfig.Range[1])
-                SliderValue.Text = value .. SliderConfig.Suffix
-                
-                CreateTween(SliderFill, {Size = UDim2.new(percentage, 0, 1, 0)}):Play()
                 SliderConfig.Callback(value)
             end
 
+            local dragging = false
             SliderButton.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    local function Update()
-                        local mousePos = Mouse.X
-                        local sliderPos = SliderTrack.AbsolutePosition.X
-                        local sliderSize = SliderTrack.AbsoluteSize.X
-                        local percentage = math.clamp((mousePos - sliderPos) / sliderSize, 0, 1)
-                        local value = SliderConfig.Range[1] + (SliderConfig.Range[2] - SliderConfig.Range[1]) * percentage
-                        UpdateSlider(value)
-                    end
-                    
-                    Update()
-                    
-                    local connection
-                    connection = Mouse.Move:Connect(Update)
-                    
-                    UserInputService.InputEnded:Connect(function(endInput)
-                        if endInput.UserInputType == Enum.UserInputType.MouseButton1 then
-                            connection:Disconnect()
-                        end
-                    end)
+                    dragging = true
                 end
             end)
 
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local percent = math.clamp((Mouse.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
+                    local value = SliderConfig.Range[1] + (SliderConfig.Range[2] - SliderConfig.Range[1]) * percent
+                    value = math.floor(value / SliderConfig.Increment) * SliderConfig.Increment
+                    UpdateSlider(value)
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+
+            -- Initialize slider
             UpdateSlider(SliderConfig.CurrentValue)
+
             table.insert(Tab.Elements, Slider)
             return Slider
-        end
-
-        function Tab:CreateInput(config)
-            local InputConfig = {
-                Name = config.Name or "Input",
-                PlaceholderText = config.PlaceholderText or "Input text",
-                NumbersOnly = config.NumbersOnly or false,
-                OnEnter = config.OnEnter or false,
-                RemoveTextAfterFocusLost = config.RemoveTextAfterFocusLost or false,
-                Flag = config.Flag or ("Input" .. tostring(#Tab.Elements + 1)),
-                Callback = config.Callback or function() end
-            }
-
-            local Input = Instance.new("Frame")
-            Input.Name = "Input_" .. InputConfig.Name
-            Input.Size = UDim2.new(1, 0, 0, 50)
-            Input.BackgroundColor3 = VXHConfig.Colors.Card
-            Input.BorderSizePixel = 0
-            Input.LayoutOrder = #Tab.Elements + 1
-            Input.Parent = TabContent
-
-            CreateCorner(Input, 8)
-            CreateStroke(Input, 1, VXHConfig.Colors.Border, 0.7)
-
-            local InputLabel = Instance.new("TextLabel")
-            InputLabel.Name = "InputLabel"
-            InputLabel.Size = UDim2.new(1, -10, 0, 20)
-            InputLabel.Position = UDim2.new(0, 10, 0, 5)
-            InputLabel.BackgroundTransparency = 1
-            InputLabel.Text = InputConfig.Name
-            InputLabel.TextColor3 = VXHConfig.Colors.Text
-            InputLabel.TextScaled = true
-            InputLabel.Font = VXHConfig.DefaultFont
-            InputLabel.TextXAlignment = Enum.TextXAlignment.Left
-            InputLabel.Parent = Input
-
-            local InputBox = Instance.new("TextBox")
-            InputBox.Name = "InputBox"
-            InputBox.Size = UDim2.new(1, -20, 0, 20)
-            InputBox.Position = UDim2.new(0, 10, 0, 25)
-            InputBox.BackgroundColor3 = VXHConfig.Colors.Background
-            InputBox.BorderSizePixel = 0
-            InputBox.PlaceholderText = InputConfig.PlaceholderText
-            InputBox.PlaceholderColor3 = VXHConfig.Colors.SubText
-            InputBox.Text = ""
-            InputBox.TextColor3 = VXHConfig.Colors.Text
-            InputBox.TextScaled = true
-            InputBox.Font = VXHConfig.DefaultFont
-            InputBox.TextXAlignment = Enum.TextXAlignment.Left
-            InputBox.Parent = Input
-
-            CreateCorner(InputBox, 4)
-
-            if InputConfig.NumbersOnly then
-                InputBox:GetPropertyChangedSignal("Text"):Connect(function()
-                    InputBox.Text = InputBox.Text:gsub("%D", "")
-                end)
-            end
-
-            local function HandleInput()
-                local text = InputBox.Text
-                VXH.Flags[InputConfig.Flag] = text
-                if InputConfig.RemoveTextAfterFocusLost then
-                    InputBox.Text = ""
-                end
-                InputConfig.Callback(text)
-            end
-
-            if InputConfig.OnEnter then
-                InputBox.FocusLost:Connect(function(enterPressed)
-                    if enterPressed then
-                        HandleInput()
-                    end
-                end)
-            else
-                InputBox.FocusLost:Connect(HandleInput)
-            end
-
-            -- Add to flags system
-            VXH.Flags[InputConfig.Flag] = InputBox.Text
-            Input.CurrentValue = InputBox.Text
-
-            table.insert(Tab.Elements, Input)
-            return Input
         end
 
         function Tab:CreateDropdown(config)
             local DropdownConfig = {
                 Name = config.Name or "Dropdown",
-                Options = config.Options or {"Option 1", "Option 2"},
+                Options = config.Options or {"Option 1", "Option 2", "Option 3"},
                 CurrentOption = config.CurrentOption or config.Options[1],
-                Flag = config.Flag or ("Dropdown" .. tostring(#Tab.Elements + 1)),
+                Flag = config.Flag or "Dropdown1",
                 Callback = config.Callback or function() end
             }
 
             local Dropdown = Instance.new("Frame")
             Dropdown.Name = "Dropdown_" .. DropdownConfig.Name
             Dropdown.Size = UDim2.new(1, 0, 0, 50)
-            Dropdown.BackgroundColor3 = VXHConfig.Colors.Card
+            Dropdown.BackgroundColor3 = VXHConfig.Colors.Background
             Dropdown.BorderSizePixel = 0
             Dropdown.LayoutOrder = #Tab.Elements + 1
+            Dropdown.ZIndex = 14
             Dropdown.Parent = TabContent
 
-            CreateCorner(Dropdown, 8)
+            CreateCorner(Dropdown, 12)
             CreateStroke(Dropdown, 1, VXHConfig.Colors.Border, 0.7)
 
             local DropdownLabel = Instance.new("TextLabel")
             DropdownLabel.Name = "DropdownLabel"
-            DropdownLabel.Size = UDim2.new(1, -10, 0, 20)
-            DropdownLabel.Position = UDim2.new(0, 10, 0, 5)
+            DropdownLabel.Size = UDim2.new(0, 150, 1, 0)
+            DropdownLabel.Position = UDim2.new(0, 15, 0, 0)
             DropdownLabel.BackgroundTransparency = 1
             DropdownLabel.Text = DropdownConfig.Name
             DropdownLabel.TextColor3 = VXHConfig.Colors.Text
-            DropdownLabel.TextScaled = true
+            DropdownLabel.TextSize = 16
             DropdownLabel.Font = VXHConfig.DefaultFont
             DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+            DropdownLabel.ZIndex = 15
             DropdownLabel.Parent = Dropdown
 
             local DropdownButton = Instance.new("TextButton")
             DropdownButton.Name = "DropdownButton"
-            DropdownButton.Size = UDim2.new(1, -20, 0, 20)
-            DropdownButton.Position = UDim2.new(0, 10, 0, 25)
-            DropdownButton.BackgroundColor3 = VXHConfig.Colors.Background
+            DropdownButton.Size = UDim2.new(1, -170, 0, 35)
+            DropdownButton.Position = UDim2.new(0, 160, 0, 7.5)
+            DropdownButton.BackgroundColor3 = VXHConfig.Colors.Card
             DropdownButton.BorderSizePixel = 0
-            DropdownButton.Text = DropdownConfig.CurrentOption .. " ▼"
+            DropdownButton.Text = DropdownConfig.CurrentOption
             DropdownButton.TextColor3 = VXHConfig.Colors.Text
-            DropdownButton.TextScaled = true
+            DropdownButton.TextSize = 14
             DropdownButton.Font = VXHConfig.DefaultFont
-            DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+            DropdownButton.ZIndex = 15
             DropdownButton.Parent = Dropdown
 
-            CreateCorner(DropdownButton, 4)
+            CreateCorner(DropdownButton, 8)
+            CreateStroke(DropdownButton, 1, VXHConfig.Colors.Border, 0.5)
 
-            local DropdownList = Instance.new("Frame")
-            DropdownList.Name = "DropdownList"
-            DropdownList.Size = UDim2.new(1, -20, 0, #DropdownConfig.Options * 25)
-            DropdownList.Position = UDim2.new(0, 10, 1, 5)
-            DropdownList.BackgroundColor3 = VXHConfig.Colors.Background
-            DropdownList.BorderSizePixel = 0
-            DropdownList.Visible = false
-            DropdownList.Parent = Dropdown
-            DropdownList.ZIndex = 10
-
-            CreateCorner(DropdownList, 4)
-            CreateStroke(DropdownList, 1, VXHConfig.Colors.Border, 0.7)
-
-            local DropdownListLayout = Instance.new("UIListLayout")
-            DropdownListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            DropdownListLayout.Parent = DropdownList
-
-            for i, option in ipairs(DropdownConfig.Options) do
-                local OptionButton = Instance.new("TextButton")
-                OptionButton.Name = "Option_" .. option
-                OptionButton.Size = UDim2.new(1, 0, 0, 25)
-                OptionButton.BackgroundColor3 = VXHConfig.Colors.Background
-                OptionButton.BorderSizePixel = 0
-                OptionButton.Text = option
-                OptionButton.TextColor3 = VXHConfig.Colors.Text
-                OptionButton.TextScaled = true
-                OptionButton.Font = VXHConfig.DefaultFont
-                OptionButton.LayoutOrder = i
-                OptionButton.Parent = DropdownList
-
-                OptionButton.MouseButton1Click:Connect(function()
-                    DropdownConfig.CurrentOption = option
-                    DropdownButton.Text = option .. " ▼"
-                    DropdownList.Visible = false
-                    VXH.Flags[DropdownConfig.Flag] = option
-                    DropdownConfig.Callback(option)
-                end)
-
-                OptionButton.MouseEnter:Connect(function()
-                    CreateTween(OptionButton, {BackgroundColor3 = VXHConfig.Colors.Card}):Play()
-                end)
-
-                OptionButton.MouseLeave:Connect(function()
-                    CreateTween(OptionButton, {BackgroundColor3 = VXHConfig.Colors.Background}):Play()
-                end)
-            end
-
+            -- Dropdown functionality would be implemented here
+            -- For now, just basic button functionality
             DropdownButton.MouseButton1Click:Connect(function()
-                DropdownList.Visible = not DropdownList.Visible
-                DropdownButton.Text = DropdownConfig.CurrentOption .. (DropdownList.Visible and " ▲" or " ▼")
+                PlaySound("rbxasset://sounds/electronicpingshort.wav", 0.3)
+                print("Dropdown clicked:", DropdownConfig.Name)
             end)
-
-            -- Add to flags system
-            VXH.Flags[DropdownConfig.Flag] = DropdownConfig.CurrentOption
-            Dropdown.CurrentOption = DropdownConfig.CurrentOption
 
             table.insert(Tab.Elements, Dropdown)
             return Dropdown
         end
 
-        function Tab:CreateColorPicker(config)
-            local ColorPickerConfig = {
-                Name = config.Name or "Color Picker",
-                Color = config.Color or Color3.fromRGB(255, 255, 255),
-                Flag = config.Flag or ("ColorPicker" .. tostring(#Tab.Elements + 1)),
+        function Tab:CreateTextbox(config)
+            local TextboxConfig = {
+                Name = config.Name or "Textbox",
+                CurrentText = config.CurrentText or "",
+                PlaceholderText = config.PlaceholderText or "Enter text...",
+                Flag = config.Flag or "Textbox1",
                 Callback = config.Callback or function() end
             }
 
-            local ColorPicker = Instance.new("Frame")
-            ColorPicker.Name = "ColorPicker_" .. ColorPickerConfig.Name
-            ColorPicker.Size = UDim2.new(1, 0, 0, 50)
-            ColorPicker.BackgroundColor3 = VXHConfig.Colors.Card
-            ColorPicker.BorderSizePixel = 0
-            ColorPicker.LayoutOrder = #Tab.Elements + 1
-            ColorPicker.Parent = TabContent
+            local Textbox = Instance.new("Frame")
+            Textbox.Name = "Textbox_" .. TextboxConfig.Name
+            Textbox.Size = UDim2.new(1, 0, 0, 50)
+            Textbox.BackgroundColor3 = VXHConfig.Colors.Background
+            Textbox.BorderSizePixel = 0
+            Textbox.LayoutOrder = #Tab.Elements + 1
+            Textbox.ZIndex = 14
+            Textbox.Parent = TabContent
 
-            CreateCorner(ColorPicker, 8)
-            CreateStroke(ColorPicker, 1, VXHConfig.Colors.Border, 0.7)
+            CreateCorner(Textbox, 12)
+            CreateStroke(Textbox, 1, VXHConfig.Colors.Border, 0.7)
 
-            local ColorPickerLabel = Instance.new("TextLabel")
-            ColorPickerLabel.Name = "ColorPickerLabel"
-            ColorPickerLabel.Size = UDim2.new(1, -60, 0, 20)
-            ColorPickerLabel.Position = UDim2.new(0, 10, 0, 5)
-            ColorPickerLabel.BackgroundTransparency = 1
-            ColorPickerLabel.Text = ColorPickerConfig.Name
-            ColorPickerLabel.TextColor3 = VXHConfig.Colors.Text
-            ColorPickerLabel.TextScaled = true
-            ColorPickerLabel.Font = VXHConfig.DefaultFont
-            ColorPickerLabel.TextXAlignment = Enum.TextXAlignment.Left
-            ColorPickerLabel.Parent = ColorPicker
+            local TextboxLabel = Instance.new("TextLabel")
+            TextboxLabel.Name = "TextboxLabel"
+            TextboxLabel.Size = UDim2.new(0, 150, 1, 0)
+            TextboxLabel.Position = UDim2.new(0, 15, 0, 0)
+            TextboxLabel.BackgroundTransparency = 1
+            TextboxLabel.Text = TextboxConfig.Name
+            TextboxLabel.TextColor3 = VXHConfig.Colors.Text
+            TextboxLabel.TextSize = 16
+            TextboxLabel.Font = VXHConfig.DefaultFont
+            TextboxLabel.TextXAlignment = Enum.TextXAlignment.Left
+            TextboxLabel.ZIndex = 15
+            TextboxLabel.Parent = Textbox
 
-            local ColorPreview = Instance.new("Frame")
-            ColorPreview.Name = "ColorPreview"
-            ColorPreview.Size = UDim2.new(0, 40, 0, 40)
-            ColorPreview.Position = UDim2.new(1, -50, 0, 5)
-            ColorPreview.BackgroundColor3 = ColorPickerConfig.Color
-            ColorPreview.BorderSizePixel = 0
-            ColorPreview.Parent = ColorPicker
+            local TextboxInput = Instance.new("TextBox")
+            TextboxInput.Name = "TextboxInput"
+            TextboxInput.Size = UDim2.new(1, -170, 0, 35)
+            TextboxInput.Position = UDim2.new(0, 160, 0, 7.5)
+            TextboxInput.BackgroundColor3 = VXHConfig.Colors.Card
+            TextboxInput.BorderSizePixel = 0
+            TextboxInput.Text = TextboxConfig.CurrentText
+            TextboxInput.PlaceholderText = TextboxConfig.PlaceholderText
+            TextboxInput.TextColor3 = VXHConfig.Colors.Text
+            TextboxInput.PlaceholderColor3 = VXHConfig.Colors.SubText
+            TextboxInput.TextSize = 14
+            TextboxInput.Font = VXHConfig.DefaultFont
+            TextboxInput.ZIndex = 15
+            TextboxInput.Parent = Textbox
 
-            CreateCorner(ColorPreview, 6)
-            CreateStroke(ColorPreview, 1, VXHConfig.Colors.Border, 0.7)
+            CreateCorner(TextboxInput, 8)
+            CreateStroke(TextboxInput, 1, VXHConfig.Colors.Border, 0.5)
 
-            local ColorButton = Instance.new("TextButton")
-            ColorButton.Name = "ColorButton"
-            ColorButton.Size = UDim2.new(1, 0, 1, 0)
-            ColorButton.BackgroundTransparency = 1
-            ColorButton.Text = ""
-            ColorButton.Parent = ColorPreview
-
-            -- Simple color picker (you can enhance this with a full color wheel)
-            local colors = {
-                Color3.fromRGB(255, 0, 0),    -- Red
-                Color3.fromRGB(0, 255, 0),    -- Green
-                Color3.fromRGB(0, 0, 255),    -- Blue
-                Color3.fromRGB(255, 255, 0),  -- Yellow
-                Color3.fromRGB(255, 0, 255),  -- Magenta
-                Color3.fromRGB(0, 255, 255),  -- Cyan
-                Color3.fromRGB(255, 255, 255), -- White
-                Color3.fromRGB(0, 0, 0)       -- Black
-            }
-
-            local currentColorIndex = 1
-            ColorButton.MouseButton1Click:Connect(function()
-                currentColorIndex = currentColorIndex % #colors + 1
-                ColorPickerConfig.Color = colors[currentColorIndex]
-                ColorPreview.BackgroundColor3 = ColorPickerConfig.Color
-                VXH.Flags[ColorPickerConfig.Flag] = ColorPickerConfig.Color
-                ColorPickerConfig.Callback(ColorPickerConfig.Color)
+            TextboxInput.FocusLost:Connect(function()
+                TextboxConfig.CurrentText = TextboxInput.Text
+                TextboxConfig.Callback(TextboxInput.Text)
             end)
 
-            -- Add to flags system
-            VXH.Flags[ColorPickerConfig.Flag] = ColorPickerConfig.Color
-            ColorPicker.CurrentColor = ColorPickerConfig.Color
-
-            table.insert(Tab.Elements, ColorPicker)
-            return ColorPicker
+            table.insert(Tab.Elements, Textbox)
+            return Textbox
         end
 
-        function Tab:CreateKeybind(config)
-            local KeybindConfig = {
-                Name = config.Name or "Keybind",
-                CurrentKeybind = config.CurrentKeybind or "None",
-                HoldToInteract = config.HoldToInteract or false,
-                Flag = config.Flag or ("Keybind" .. tostring(#Tab.Elements + 1)),
-                Callback = config.Callback or function() end
-            }
-
-            local Keybind = Instance.new("Frame")
-            Keybind.Name = "Keybind_" .. KeybindConfig.Name
-            Keybind.Size = UDim2.new(1, 0, 0, 50)
-            Keybind.BackgroundColor3 = VXHConfig.Colors.Card
-            Keybind.BorderSizePixel = 0
-            Keybind.LayoutOrder = #Tab.Elements + 1
-            Keybind.Parent = TabContent
-
-            CreateCorner(Keybind, 8)
-            CreateStroke(Keybind, 1, VXHConfig.Colors.Border, 0.7)
-
-            local KeybindLabel = Instance.new("TextLabel")
-            KeybindLabel.Name = "KeybindLabel"
-            KeybindLabel.Size = UDim2.new(1, -80, 0, 20)
-            KeybindLabel.Position = UDim2.new(0, 10, 0, 5)
-            KeybindLabel.BackgroundTransparency = 1
-            KeybindLabel.Text = KeybindConfig.Name
-            KeybindLabel.TextColor3 = VXHConfig.Colors.Text
-            KeybindLabel.TextScaled = true
-            KeybindLabel.Font = VXHConfig.DefaultFont
-            KeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
-            KeybindLabel.Parent = Keybind
-
-            local KeybindButton = Instance.new("TextButton")
-            KeybindButton.Name = "KeybindButton"
-            KeybindButton.Size = UDim2.new(0, 60, 0, 20)
-            KeybindButton.Position = UDim2.new(1, -70, 0, 15)
-            KeybindButton.BackgroundColor3 = VXHConfig.Colors.Background
-            KeybindButton.BorderSizePixel = 0
-            KeybindButton.Text = KeybindConfig.CurrentKeybind
-            KeybindButton.TextColor3 = VXHConfig.Colors.Text
-            KeybindButton.TextScaled = true
-            KeybindButton.Font = VXHConfig.DefaultFont
-            KeybindButton.Parent = Keybind
-
-            CreateCorner(KeybindButton, 4)
-
-            local listening = false
-            KeybindButton.MouseButton1Click:Connect(function()
-                if listening then return end
-                listening = true
-                KeybindButton.Text = "..."
-                
-                local connection
-                connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-                    if gameProcessed then return end
-                    
-                    local keyName = input.KeyCode.Name
-                    if keyName ~= "Unknown" then
-                        KeybindConfig.CurrentKeybind = keyName
-                        KeybindButton.Text = keyName
-                        VXH.Flags[KeybindConfig.Flag] = keyName
-                        listening = false
-                        connection:Disconnect()
-                    end
-                end)
-            end)
-
-            -- Handle keybind activation
-            UserInputService.InputBegan:Connect(function(input, gameProcessed)
-                if gameProcessed then return end
-                if input.KeyCode.Name == KeybindConfig.CurrentKeybind then
-                    if not KeybindConfig.HoldToInteract then
-                        KeybindConfig.Callback()
-                    end
-                end
-            end)
-
-            if KeybindConfig.HoldToInteract then
-                UserInputService.InputEnded:Connect(function(input, gameProcessed)
-                    if gameProcessed then return end
-                    if input.KeyCode.Name == KeybindConfig.CurrentKeybind then
-                        KeybindConfig.Callback()
-                    end
-                end)
-            end
-
-            -- Add to flags system
-            VXH.Flags[KeybindConfig.Flag] = KeybindConfig.CurrentKeybind
-            Keybind.CurrentKeybind = KeybindConfig.CurrentKeybind
-
-            table.insert(Tab.Elements, Keybind)
-            return Keybind
-        end
-
-        function Tab:CreateLabel(config)
-            local LabelConfig = {
-                Name = config.Name or "Label",
-                Text = config.Text or config.Name or "Label Text"
-            }
-
-            local Label = Instance.new("Frame")
-            Label.Name = "Label_" .. LabelConfig.Name
-            Label.Size = UDim2.new(1, 0, 0, 30)
-            Label.BackgroundTransparency = 1
-            Label.LayoutOrder = #Tab.Elements + 1
-            Label.Parent = TabContent
-
-            local LabelText = Instance.new("TextLabel")
-            LabelText.Name = "LabelText"
-            LabelText.Size = UDim2.new(1, -10, 1, 0)
-            LabelText.Position = UDim2.new(0, 10, 0, 0)
-            LabelText.BackgroundTransparency = 1
-            LabelText.Text = LabelConfig.Text
-            LabelText.TextColor3 = VXHConfig.Colors.SubText
-            LabelText.TextScaled = true
-            LabelText.Font = VXHConfig.DefaultFont
-            LabelText.TextXAlignment = Enum.TextXAlignment.Left
-            LabelText.Parent = Label
-
-            table.insert(Tab.Elements, Label)
-            return Label
-        end
-
-        Tabs[name] = Tab
         return Tab
     end
 
-    function Window:Notify(config)
-        local NotificationConfig = {
-            Title = config.Title or "Notification",
-            Content = config.Content or "This is a notification",
-            Duration = config.Duration or 5,
-            Image = config.Image or "rbxassetid://4483345998",
-            Actions = config.Actions or {}
-        }
+    -- Update canvas sizes
+    spawn(function()
+        while TabList.Parent do
+            TabList.CanvasSize = UDim2.new(0, 0, 0, TabListLayout.AbsoluteContentSize.Y + 10)
+            wait(0.1)
+        end
+    end)
 
-        local Notification = Instance.new("Frame")
-        Notification.Name = "Notification"
-        Notification.Size = UDim2.new(0, 300, 0, 80)
-        Notification.Position = UDim2.new(1, -310, 0, 10)
-        Notification.BackgroundColor3 = VXHConfig.Colors.Card
-        Notification.BorderSizePixel = 0
-        Notification.Parent = ScreenGui
-
-        CreateCorner(Notification, 8)
-        CreateStroke(Notification, 1, VXHConfig.Colors.Border, 0.7)
-
-        local NotificationIcon = Instance.new("ImageLabel")
-        NotificationIcon.Name = "NotificationIcon"
-        NotificationIcon.Size = UDim2.new(0, 20, 0, 20)
-        NotificationIcon.Position = UDim2.new(0, 10, 0, 10)
-        NotificationIcon.BackgroundTransparency = 1
-        NotificationIcon.Image = NotificationConfig.Image
-        NotificationIcon.ImageColor3 = VXHConfig.Colors.Primary
-        NotificationIcon.Parent = Notification
-
-        local NotificationTitle = Instance.new("TextLabel")
-        NotificationTitle.Name = "NotificationTitle"
-        NotificationTitle.Size = UDim2.new(1, -40, 0, 20)
-        NotificationTitle.Position = UDim2.new(0, 35, 0, 10)
-        NotificationTitle.BackgroundTransparency = 1
-        NotificationTitle.Text = NotificationConfig.Title
-        NotificationTitle.TextColor3 = VXHConfig.Colors.Text
-        NotificationTitle.TextScaled = true
-        NotificationTitle.Font = VXHConfig.DefaultFont
-        NotificationTitle.TextXAlignment = Enum.TextXAlignment.Left
-        NotificationTitle.Parent = Notification
-
-        local NotificationContent = Instance.new("TextLabel")
-        NotificationContent.Name = "NotificationContent"
-        NotificationContent.Size = UDim2.new(1, -40, 0, 15)
-        NotificationContent.Position = UDim2.new(0, 35, 0, 30)
-        NotificationContent.BackgroundTransparency = 1
-        NotificationContent.Text = NotificationConfig.Content
-        NotificationContent.TextColor3 = VXHConfig.Colors.SubText
-        NotificationContent.TextScaled = true
-        NotificationContent.Font = VXHConfig.DefaultFont
-        NotificationContent.TextXAlignment = Enum.TextXAlignment.Left
-        NotificationContent.Parent = Notification
-
-        -- Slide in animation
-        CreateTween(Notification, {Position = UDim2.new(1, -310, 0, 10)}):Play()
-
-        -- Auto dismiss
-        game:GetService("Debris"):AddItem(Notification, NotificationConfig.Duration)
-    end
-
-    WindowFrame = {
-        ScreenGui = ScreenGui,
-        MainFrame = MainFrame,
-        Tabs = Tabs
-    }
-
+    print("VXH Enhanced Framework v" .. VXHConfig.Version .. " loaded!")
+    print("Toggle Key: " .. VXHConfig.ToggleKey.Name)
+    print("Framework ready for script hub developers!")
+    
     return Window
 end
 
--- VXH Advanced Features
-
--- Theme System
-VXH.Themes = {
-    Default = {
-        Primary = Color3.fromRGB(59, 130, 246),
-        Secondary = Color3.fromRGB(99, 102, 241),
-        Background = Color3.fromRGB(30, 30, 30),
-        Card = Color3.fromRGB(40, 40, 40),
-        Text = Color3.fromRGB(255, 255, 255),
-        SubText = Color3.fromRGB(156, 163, 175),
-        Success = Color3.fromRGB(16, 185, 129),
-        Warning = Color3.fromRGB(245, 158, 11),
-        Error = Color3.fromRGB(239, 68, 68),
-        Border = Color3.fromRGB(75, 85, 99)
-    },
-    Dark = {
-        Primary = Color3.fromRGB(37, 99, 235),
-        Secondary = Color3.fromRGB(67, 56, 202),
-        Background = Color3.fromRGB(17, 24, 39),
-        Card = Color3.fromRGB(31, 41, 55),
-        Text = Color3.fromRGB(243, 244, 246),
-        SubText = Color3.fromRGB(156, 163, 175),
-        Success = Color3.fromRGB(5, 150, 105),
-        Warning = Color3.fromRGB(217, 119, 6),
-        Error = Color3.fromRGB(220, 38, 38),
-        Border = Color3.fromRGB(55, 65, 81)
-    },
-    Light = {
-        Primary = Color3.fromRGB(59, 130, 246),
-        Secondary = Color3.fromRGB(99, 102, 241),
-        Background = Color3.fromRGB(255, 255, 255),
-        Card = Color3.fromRGB(249, 250, 251),
-        Text = Color3.fromRGB(17, 24, 39),
-        SubText = Color3.fromRGB(107, 114, 128),
-        Success = Color3.fromRGB(16, 185, 129),
-        Warning = Color3.fromRGB(245, 158, 11),
-        Error = Color3.fromRGB(239, 68, 68),
-        Border = Color3.fromRGB(209, 213, 219)
-    }
-}
-
--- Configuration Management
-function VXH:SaveConfiguration(folderName, fileName)
-    if not folderName or not fileName then
-        return false
-    end
-    
-    local config = {
-        Flags = self.Flags,
-        Version = self.Version,
-        SavedAt = os.time()
-    }
-    
-    -- In a real implementation, you would save to a file
-    -- For now, we'll use a simple table storage
-    if not game:GetService("ReplicatedStorage"):FindFirstChild("VXH_Configs") then
-        local configFolder = Instance.new("Folder")
-        configFolder.Name = "VXH_Configs"
-        configFolder.Parent = game:GetService("ReplicatedStorage")
-    end
-    
-    local configValue = Instance.new("StringValue")
-    configValue.Name = fileName
-    configValue.Value = game:GetService("HttpService"):JSONEncode(config)
-    configValue.Parent = game:GetService("ReplicatedStorage").VXH_Configs
-    
-    return true
-end
-
-function VXH:LoadConfiguration(folderName, fileName)
-    if not folderName or not fileName then
-        return false
-    end
-    
-    local configFolder = game:GetService("ReplicatedStorage"):FindFirstChild("VXH_Configs")
-    if not configFolder then
-        return false
-    end
-    
-    local configValue = configFolder:FindFirstChild(fileName)
-    if not configValue then
-        return false
-    end
-    
-    local success, config = pcall(function()
-        return game:GetService("HttpService"):JSONDecode(configValue.Value)
-    end)
-    
-    if success and config then
-        self.Flags = config.Flags or {}
-        return true
-    end
-    
-    return false
-end
-
--- Key System Implementation
-function VXH:CreateKeySystem(config)
-    local KeySystemConfig = {
-        Title = config.Title or "VXH Key System",
-        Subtitle = config.Subtitle or "Enter your key to continue",
-        Note = config.Note or "Get your key from our Discord server",
-        FileName = config.FileName or "VXH_Key",
-        SaveKey = config.SaveKey or true,
-        GrabKeyFromSite = config.GrabKeyFromSite or false,
-        Key = config.Key or {"VXH2024"},
-        KeyLink = config.KeyLink or "https://discord.gg/vxh"
-    }
-    
-    -- Create Key System GUI
-    local KeySystemGui = Instance.new("ScreenGui")
-    KeySystemGui.Name = "VXH_KeySystem"
-    KeySystemGui.Parent = CoreGui
-    KeySystemGui.ResetOnSpawn = false
-    
-    local KeyFrame = Instance.new("Frame")
-    KeyFrame.Name = "KeyFrame"
-    KeyFrame.Size = UDim2.new(0, 400, 0, 300)
-    KeyFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
-    KeyFrame.BackgroundColor3 = VXHConfig.Colors.Background
-    KeyFrame.BorderSizePixel = 0
-    KeyFrame.Parent = KeySystemGui
-    
-    CreateCorner(KeyFrame, 12)
-    CreateStroke(KeyFrame, 1, VXHConfig.Colors.Border, 0.7)
-    
-    -- Key System Title
-    local KeyTitle = Instance.new("TextLabel")
-    KeyTitle.Name = "KeyTitle"
-    KeyTitle.Size = UDim2.new(1, -20, 0, 40)
-    KeyTitle.Position = UDim2.new(0, 10, 0, 10)
-    KeyTitle.BackgroundTransparency = 1
-    KeyTitle.Text = KeySystemConfig.Title
-    KeyTitle.TextColor3 = VXHConfig.Colors.Text
-    KeyTitle.TextScaled = true
-    KeyTitle.Font = VXHConfig.DefaultFont
-    KeyTitle.TextXAlignment = Enum.TextXAlignment.Center
-    KeyTitle.Parent = KeyFrame
-    
-    -- Key System Subtitle
-    local KeySubtitle = Instance.new("TextLabel")
-    KeySubtitle.Name = "KeySubtitle"
-    KeySubtitle.Size = UDim2.new(1, -20, 0, 30)
-    KeySubtitle.Position = UDim2.new(0, 10, 0, 50)
-    KeySubtitle.BackgroundTransparency = 1
-    KeySubtitle.Text = KeySystemConfig.Subtitle
-    KeySubtitle.TextColor3 = VXHConfig.Colors.SubText
-    KeySubtitle.TextScaled = true
-    KeySubtitle.Font = VXHConfig.DefaultFont
-    KeySubtitle.TextXAlignment = Enum.TextXAlignment.Center
-    KeySubtitle.Parent = KeyFrame
-    
-    -- Key Input
-    local KeyInput = Instance.new("TextBox")
-    KeyInput.Name = "KeyInput"
-    KeyInput.Size = UDim2.new(1, -40, 0, 40)
-    KeyInput.Position = UDim2.new(0, 20, 0, 100)
-    KeyInput.BackgroundColor3 = VXHConfig.Colors.Card
-    KeyInput.BorderSizePixel = 0
-    KeyInput.PlaceholderText = "Enter your key here..."
-    KeyInput.PlaceholderColor3 = VXHConfig.Colors.SubText
-    KeyInput.Text = ""
-    KeyInput.TextColor3 = VXHConfig.Colors.Text
-    KeyInput.TextScaled = true
-    KeyInput.Font = VXHConfig.DefaultFont
-    KeyInput.Parent = KeyFrame
-    
-    CreateCorner(KeyInput, 8)
-    
-    -- Submit Button
-    local SubmitButton = Instance.new("TextButton")
-    SubmitButton.Name = "SubmitButton"
-    SubmitButton.Size = UDim2.new(1, -40, 0, 40)
-    SubmitButton.Position = UDim2.new(0, 20, 0, 160)
-    SubmitButton.BackgroundColor3 = VXHConfig.Colors.Primary
-    SubmitButton.BorderSizePixel = 0
-    SubmitButton.Text = "Submit Key"
-    SubmitButton.TextColor3 = VXHConfig.Colors.Text
-    SubmitButton.TextScaled = true
-    SubmitButton.Font = VXHConfig.DefaultFont
-    SubmitButton.Parent = KeyFrame
-    
-    CreateCorner(SubmitButton, 8)
-    
-    -- Get Key Button
-    local GetKeyButton = Instance.new("TextButton")
-    GetKeyButton.Name = "GetKeyButton"
-    GetKeyButton.Size = UDim2.new(1, -40, 0, 40)
-    GetKeyButton.Position = UDim2.new(0, 20, 0, 210)
-    GetKeyButton.BackgroundColor3 = VXHConfig.Colors.Secondary
-    GetKeyButton.BorderSizePixel = 0
-    GetKeyButton.Text = "Get Key"
-    GetKeyButton.TextColor3 = VXHConfig.Colors.Text
-    GetKeyButton.TextScaled = true
-    GetKeyButton.Font = VXHConfig.DefaultFont
-    GetKeyButton.Parent = KeyFrame
-    
-    CreateCorner(GetKeyButton, 8)
-    
-    -- Key System Logic
-    local function ValidateKey(key)
-        for _, validKey in ipairs(KeySystemConfig.Key) do
-            if key == validKey then
-                return true
-            end
-        end
-        return false
-    end
-    
-    SubmitButton.MouseButton1Click:Connect(function()
-        local enteredKey = KeyInput.Text
-        if ValidateKey(enteredKey) then
-            if KeySystemConfig.SaveKey then
-                -- Save key locally (simplified)
-                game:GetService("Players").LocalPlayer:SetAttribute("VXH_Key", enteredKey)
-            end
-            KeySystemGui:Destroy()
-        else
-            -- Show error
-            CreateTween(KeyFrame, {BackgroundColor3 = VXHConfig.Colors.Error}):Play()
-            wait(0.5)
-            CreateTween(KeyFrame, {BackgroundColor3 = VXHConfig.Colors.Background}):Play()
-        end
-    end)
-    
-    GetKeyButton.MouseButton1Click:Connect(function()
-        -- Open key link (in real implementation)
-        print("Get your key from: " .. KeySystemConfig.KeyLink)
-    end)
-    
-    -- Check if key is already saved
-    if KeySystemConfig.SaveKey then
-        local savedKey = game:GetService("Players").LocalPlayer:GetAttribute("VXH_Key")
-        if savedKey and ValidateKey(savedKey) then
-            KeySystemGui:Destroy()
-            return true
-        end
-    end
-    
-    return false
-end
-
--- Utility Functions for Script Hub Developers
-function VXH:GetFlag(flagName)
-    return self.Flags[flagName]
-end
-
-function VXH:SetFlag(flagName, value)
-    self.Flags[flagName] = value
-end
-
-function VXH:DestroyWindow(windowName)
-    if self.Windows[windowName] then
-        self.Windows[windowName].ScreenGui:Destroy()
-        self.Windows[windowName] = nil
-    end
-end
-
-function VXH:ToggleWindow(windowName)
-    if self.Windows[windowName] then
-        local mainFrame = self.Windows[windowName].MainFrame
-        mainFrame.Visible = not mainFrame.Visible
-    end
-end
-
-function VXH:SetTheme(themeName)
-    if self.Themes[themeName] then
-        for colorKey, colorValue in pairs(self.Themes[themeName]) do
-            VXHConfig.Colors[colorKey] = colorValue
-        end
-    end
-end
-
--- Developer Helper Functions
-function VXH:CreateQuickToggle(name, callback)
-    -- Quick way to create a toggle without full window setup
-    local quickToggle = {
-        Name = name,
-        Value = false,
-        Callback = callback or function() end
-    }
-    
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        if input.KeyCode == Enum.KeyCode.Insert then -- Default toggle key
-            quickToggle.Value = not quickToggle.Value
-            quickToggle.Callback(quickToggle.Value)
-            print("VXH: " .. name .. " = " .. tostring(quickToggle.Value))
-        end
-    end)
-    
-    return quickToggle
-end
-
-function VXH:CreateCommand(commandName, callback)
-    -- Simple command system for developers
-    game:GetService("Players").LocalPlayer.Chatted:Connect(function(message)
-        if message:lower():sub(1, #commandName + 1) == "/" .. commandName:lower() then
-            local args = message:sub(#commandName + 3):split(" ")
-            callback(args)
-        end
-    end)
-end
-
--- Export VXH Library
 return VXH
