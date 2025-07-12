@@ -789,7 +789,7 @@ function VXH:CreateWindow(config)
             return Toggle
         end
 
-       function Tab:CreateSlider(config)
+    function Tab:CreateSlider(config)
     local SliderConfig = {
         Name = config.Name or "Slider",
         Range = config.Range or {0, 100},
@@ -799,10 +799,11 @@ function VXH:CreateWindow(config)
         Callback = config.Callback or function() end
     }
 
-    local section = Instance.new("Frame")
-    section.Size = UDim2.new(1, 0, 0, 60)
-    section.BackgroundTransparency = 1
-    section.Parent = self.Content
+    local sliderContainer = Instance.new("Frame")
+    sliderContainer.Size = UDim2.new(1, 0, 0, 60)
+    sliderContainer.BackgroundTransparency = 1
+    sliderContainer.Name = SliderConfig.Flag
+    sliderContainer.Parent = self.Content
 
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, -20, 0.5, 0)
@@ -812,14 +813,14 @@ function VXH:CreateWindow(config)
     title.TextScaled = true
     title.TextColor3 = Color3.new(1, 1, 1)
     title.BackgroundTransparency = 1
-    title.Parent = section
+    title.Parent = sliderContainer
 
     local sliderBar = Instance.new("Frame")
     sliderBar.Position = UDim2.new(0.05, 0, 0.6, 0)
     sliderBar.Size = UDim2.new(0.9, 0, 0.25, 0)
     sliderBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     sliderBar.BorderSizePixel = 0
-    sliderBar.Parent = section
+    sliderBar.Parent = sliderContainer
 
     local fill = Instance.new("Frame")
     fill.Size = UDim2.new((SliderConfig.CurrentValue - SliderConfig.Range[1]) / (SliderConfig.Range[2] - SliderConfig.Range[1]), 0, 1, 0)
@@ -841,27 +842,24 @@ function VXH:CreateWindow(config)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             update(input)
+        end
+    end)
 
-            UserInputService.InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    local percent = math.clamp((Mouse.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
-                    local value = SliderConfig.Range[1] + (SliderConfig.Range[2] - SliderConfig.Range[1]) * percent
-                    value = math.floor(value / SliderConfig.Increment) * SliderConfig.Increment
-                    UpdateSlider(value)
-                end
-            end)
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+            update(input)
+        end
+    end)
 
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = false
-                end
-            end)
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
 
-            -- Initialize slider
-            UpdateSlider(SliderConfig.CurrentValue)
+    return sliderContainer
+end
 
-            table.insert(Tab.Elements, Slider)
-            return Slider
         end
 
         function Tab:CreateDropdown(config)
