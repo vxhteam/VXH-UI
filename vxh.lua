@@ -112,14 +112,13 @@ local function CreateShadow(parent, size, transparency)
     shadow.ScaleType   = Enum.ScaleType.Slice
     shadow.SliceCenter = Rect.new(10, 10, 118, 118)
 
-    shadow.Size     = UDim2.new(1, size*2, 1, size*2)
+    shadow.Size     = UDim2.new(1, size * 2, 1, size * 2)
     shadow.Position = UDim2.new(0, -size, 0, -size)
     shadow.ZIndex   = (parent.ZIndex or 1) - 1
     shadow.Parent   = parent
 
     return shadow
 end
-
 
 local function PlaySound(soundId, volume, pitch)
     pcall(function()
