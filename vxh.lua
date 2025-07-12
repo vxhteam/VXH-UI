@@ -99,25 +99,18 @@ local function CreateStroke(parent, thickness, color, transparency)
 end
 
 local function CreateShadow(parent, size, transparency)
-    size         = size or 6
-    transparency = transparency or 0.5
-
     local shadow = Instance.new("ImageLabel")
     shadow.Name = "Shadow"
     shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://1316045217"
-    shadow.ImageColor3 = VXHConfig and VXHConfig.Colors.Shadow or Color3.new(0, 0, 0)
-    shadow.ImageTransparency      = transparency
-    shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-    shadow.Size = UDim2.new(1, size * 2, 1, size * 2)
-    shadow.Position = UDim2.new(0, -size, 0, -size)
+    shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+    shadow.ImageColor3 = VXHConfig.Colors.Shadow
+    shadow.ImageTransparency = transparency or 0.8
+    shadow.Size = UDim2.new(1, size, 1, size)
+    shadow.Position = UDim2.new(0, -size/2, 0, -size/2)
     shadow.ZIndex = (parent.ZIndex or 1) - 1
-    shadow.Parent = parent
-
+    shadow.Parent = parent.Parent
     return shadow
 end
-
 
 local function PlaySound(soundId, volume, pitch)
     pcall(function()
@@ -789,77 +782,127 @@ function VXH:CreateWindow(config)
             return Toggle
         end
 
-    function Tab:CreateSlider(config)
-    local SliderConfig = {
-        Name = config.Name or "Slider",
-        Range = config.Range or {0, 100},
-        Increment = config.Increment or 1,
-        CurrentValue = config.CurrentValue or 0,
-        Flag = config.Flag or "Slider1",
-        Callback = config.Callback or function() end
-    }
+        function Tab:CreateSlider(config)
+            local SliderConfig = {
+                Name = config.Name or "Slider",
+                Range = config.Range or {0, 100},
+                Increment = config.Increment or 1,
+                CurrentValue = config.CurrentValue or 0,
+                Flag = config.Flag or "Slider1",
+                Callback = config.Callback or function() end
+            }
 
-    local sliderContainer = Instance.new("Frame")
-    sliderContainer.Size = UDim2.new(1, 0, 0, 60)
-    sliderContainer.BackgroundTransparency = 1
-    sliderContainer.Name = SliderConfig.Flag
-    sliderContainer.Parent = self.Content
+            local Slider = Instance.new("Frame")
+            Slider.Name = "Slider_" .. SliderConfig.Name
+            Slider.Size = UDim2.new(1, 0, 0, 70)
+            Slider.BackgroundColor3 = VXHConfig.Colors.Background
+            Slider.BorderSizePixel = 0
+            Slider.LayoutOrder = #Tab.Elements + 1
+            Slider.ZIndex = 14
+            Slider.Parent = TabContent
 
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -20, 0.5, 0)
-    title.Position = UDim2.new(0, 10, 0, 0)
-    title.Text = SliderConfig.Name
-    title.Font = Enum.Font.Gotham
-    title.TextScaled = true
-    title.TextColor3 = Color3.new(1, 1, 1)
-    title.BackgroundTransparency = 1
-    title.Parent = sliderContainer
+            CreateCorner(Slider, 12)
+            CreateStroke(Slider, 1, VXHConfig.Colors.Border, 0.7)
 
-    local sliderBar = Instance.new("Frame")
-    sliderBar.Position = UDim2.new(0.05, 0, 0.6, 0)
-    sliderBar.Size = UDim2.new(0.9, 0, 0.25, 0)
-    sliderBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    sliderBar.BorderSizePixel = 0
-    sliderBar.Parent = sliderContainer
+            local SliderLabel = Instance.new("TextLabel")
+            SliderLabel.Name = "SliderLabel"
+            SliderLabel.Size = UDim2.new(1, -20, 0, 25)
+            SliderLabel.Position = UDim2.new(0, 15, 0, 5)
+            SliderLabel.BackgroundTransparency = 1
+            SliderLabel.Text = SliderConfig.Name
+            SliderLabel.TextColor3 = VXHConfig.Colors.Text
+            SliderLabel.TextSize = 16
+            SliderLabel.Font = VXHConfig.DefaultFont
+            SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+            SliderLabel.ZIndex = 15
+            SliderLabel.Parent = Slider
 
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new((SliderConfig.CurrentValue - SliderConfig.Range[1]) / (SliderConfig.Range[2] - SliderConfig.Range[1]), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    fill.BorderSizePixel = 0
-    fill.Parent = sliderBar
+            local SliderValue = Instance.new("TextLabel")
+            SliderValue.Name = "SliderValue"
+            SliderValue.Size = UDim2.new(0, 60, 0, 25)
+            SliderValue.Position = UDim2.new(1, -75, 0, 5)
+            SliderValue.BackgroundColor3 = VXHConfig.Colors.Primary
+            SliderValue.BorderSizePixel = 0
+            SliderValue.Text = tostring(SliderConfig.CurrentValue)
+            SliderValue.TextColor3 = VXHConfig.Colors.Text
+            SliderValue.TextSize = 14
+            SliderValue.Font = VXHConfig.DefaultFont
+            SliderValue.ZIndex = 15
+            SliderValue.Parent = Slider
 
-    local dragging = false
-    local UIS = game:GetService("UserInputService")
+            CreateCorner(SliderValue, 6)
 
-    local function update(input)
-        local relX = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
-        fill.Size = UDim2.new(relX, 0, 1, 0)
-        local val = math.floor((SliderConfig.Range[1] + (SliderConfig.Range[2] - SliderConfig.Range[1]) * relX) / SliderConfig.Increment + 0.5) * SliderConfig.Increment
-        SliderConfig.Callback(val)
-    end
+            local SliderTrack = Instance.new("Frame")
+            SliderTrack.Name = "SliderTrack"
+            SliderTrack.Size = UDim2.new(1, -30, 0, 6)
+            SliderTrack.Position = UDim2.new(0, 15, 0, 45)
+            SliderTrack.BackgroundColor3 = VXHConfig.Colors.Border
+            SliderTrack.BorderSizePixel = 0
+            SliderTrack.ZIndex = 15
+            SliderTrack.Parent = Slider
 
-    sliderBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            update(input)
-        end
-    end)
+            CreateCorner(SliderTrack, 3)
 
-    UIS.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
-            update(input)
-        end
-    end)
+            local SliderFill = Instance.new("Frame")
+            SliderFill.Name = "SliderFill"
+            SliderFill.Size = UDim2.new(0, 0, 1, 0)
+            SliderFill.Position = UDim2.new(0, 0, 0, 0)
+            SliderFill.BackgroundColor3 = VXHConfig.Colors.Primary
+            SliderFill.BorderSizePixel = 0
+            SliderFill.ZIndex = 16
+            SliderFill.Parent = SliderTrack
 
-    UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
+            CreateCorner(SliderFill, 3)
 
-    return sliderContainer
-end
+            local SliderButton = Instance.new("TextButton")
+            SliderButton.Name = "SliderButton"
+            SliderButton.Size = UDim2.new(0, 16, 0, 16)
+            SliderButton.Position = UDim2.new(0, -5, 0, -5)
+            SliderButton.BackgroundColor3 = VXHConfig.Colors.Text
+            SliderButton.BorderSizePixel = 0
+            SliderButton.Text = ""
+            SliderButton.ZIndex = 17
+            SliderButton.Parent = SliderFill
 
+            CreateCorner(SliderButton, 8)
+            CreateShadow(SliderButton, 4, 0.3)
+
+            -- Slider functionality
+            local function UpdateSlider(value)
+                local percent = (value - SliderConfig.Range[1]) / (SliderConfig.Range[2] - SliderConfig.Range[1])
+                SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+                SliderValue.Text = tostring(value)
+                SliderConfig.CurrentValue = value
+                SliderConfig.Callback(value)
+            end
+
+            local dragging = false
+            SliderButton.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local percent = math.clamp((Mouse.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
+                    local value = SliderConfig.Range[1] + (SliderConfig.Range[2] - SliderConfig.Range[1]) * percent
+                    value = math.floor(value / SliderConfig.Increment) * SliderConfig.Increment
+                    UpdateSlider(value)
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+
+            -- Initialize slider
+            UpdateSlider(SliderConfig.CurrentValue)
+
+            table.insert(Tab.Elements, Slider)
+            return Slider
         end
 
         function Tab:CreateDropdown(config)
