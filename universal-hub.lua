@@ -10,7 +10,7 @@
 ]]
 
 -- Load VXH Library
-local VXH = loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_USERNAME/VXH-UI/main/src/vxh-ui.lua"))()
+local VXH = loadstring(game:HttpGet("https://raw.githubusercontent.com/vxhteam/VXH-UI/refs/heads/main/vxh.lua"))()
 
 -- Services
 local Players = game:GetService("Players")
