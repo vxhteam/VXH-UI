@@ -705,40 +705,35 @@ function VXH:CreateWindow(config)
         Callback = config.Callback or function() end
     }
 
- local InputBox = Instance.new("TextBox")
-    InputBox.Name = "Input_" .. InputConfig.Name
-    InputBox.Size = UDim2.new(1, 0, 0, 50)
-    InputBox.BackgroundColor3 = VXHConfig.Colors.Background
-    InputBox.BorderSizePixel = 0
-    InputBox.Text = ""
-    InputBox.PlaceholderText = InputConfig.PlaceholderText
-    InputBox.TextColor3 = VXHConfig.Colors.Text
-    InputBox.TextSize = 16
-    InputBox.Font = VXHConfig.DefaultFont
-    InputBox.TextXAlignment = Enum.TextXAlignment.Left
-    InputBox.ClearTextOnFocus = false
-    InputBox.LayoutOrder = #Tab.Elements + 1
-    InputBox.ZIndex = 14
-    InputBox.Parent = Tab.TabContent -- VERY IMPORTANT!!
+function Tab:CreateInput(config)
+			local input = Instance.new("TextBox", TabContent)
+			input.Size = UDim2.new(1, -10, 0, 40)
+			input.PlaceholderText = config.PlaceholderText or "Enter number..."
+			input.Text = ""
+			input.TextColor3 = VXHConfig.Colors.Text
+			input.BackgroundColor3 = VXHConfig.Colors.Card
+			input.Font = VXHConfig.DefaultFont
+			input.TextSize = 14
+			CreateCorner(input, 6)
 
-    CreateCorner(InputBox, 12)
-    CreateStroke(InputBox, 1, VXHConfig.Colors.Border, 0.7)
+			input.FocusLost:Connect(function(enter)
+				if enter then
+					local val = tonumber(input.Text)
+					if val and config.Callback then
+						config.Callback(val)
+					end
+				end
+			end)
+		end
 
-    table.insert(Tab.Elements, InputBox)
+		table.insert(Window.Tabs, Tab)
+		return Tab
+	end
 
-    InputBox.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            local number = tonumber(InputBox.Text)
-            if number then
-                pcall(function()
-                    InputConfig.Callback(number)
-                end)
-            end
-        end
-    end)
-
-    return InputBox
+	return Window
 end
+
+return VXH
 
         function Tab:CreateToggle(config)
             local ToggleConfig = {
