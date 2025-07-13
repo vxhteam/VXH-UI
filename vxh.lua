@@ -931,66 +931,105 @@ function Tab:CreateSlider(config)
 	return Slider
 end
 
-        function Tab:CreateDropdown(config)
-            local DropdownConfig = {
-                Name = config.Name or "Dropdown",
-                Options = config.Options or {"Option 1", "Option 2", "Option 3"},
-                CurrentOption = config.CurrentOption or config.Options[1],
-                Flag = config.Flag or "Dropdown1",
-                Callback = config.Callback or function() end
-            }
+        function Tfunction Tab:CreateDropdown(config)
+    local DropdownConfig = {
+        Name = config.Name or "Dropdown",
+        Options = config.Options or {"Option 1", "Option 2"},
+        CurrentOption = config.CurrentOption or config.Options[1],
+        Callback = config.Callback or function() end
+    }
 
-            local Dropdown = Instance.new("Frame")
-            Dropdown.Name = "Dropdown_" .. DropdownConfig.Name
+    local Dropdown = Instance.new("Frame")
+    Dropdown.Name = "Dropdown_" .. DropdownConfig.Name
+    Dropdown.Size = UDim2.new(1, 0, 0, 50)
+    Dropdown.BackgroundColor3 = VXHConfig.Colors.Background
+    Dropdown.BorderSizePixel = 0
+    Dropdown.LayoutOrder = #Tab.Elements + 1
+    Dropdown.ZIndex = 14
+    Dropdown.Parent = TabContent
+
+    CreateCorner(Dropdown, 12)
+    CreateStroke(Dropdown, 1, VXHConfig.Colors.Border, 0.7)
+
+    local Label = Instance.new("TextLabel")
+    Label.Name = "DropdownLabel"
+    Label.Size = UDim2.new(0.4, 0, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = DropdownConfig.Name
+    Label.TextColor3 = VXHConfig.Colors.Text
+    Label.TextSize = 16
+    Label.Font = VXHConfig.DefaultFont
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.ZIndex = 15
+    Label.Parent = Dropdown
+
+    local Button = Instance.new("TextButton")
+    Button.Name = "DropdownButton"
+    Button.Size = UDim2.new(0.5, 0, 0.7, 0)
+    Button.Position = UDim2.new(0.45, 0, 0.15, 0)
+    Button.BackgroundColor3 = VXHConfig.Colors.Card
+    Button.Text = DropdownConfig.CurrentOption
+    Button.TextColor3 = VXHConfig.Colors.Text
+    Button.TextSize = 14
+    Button.Font = VXHConfig.DefaultFont
+    Button.ZIndex = 15
+    Button.Parent = Dropdown
+
+    CreateCorner(Button, 8)
+
+    local open = false
+    local function refreshOptions()
+        if open then
+            for _, v in pairs(Dropdown:GetChildren()) do
+                if v:IsA("TextButton") and v.Name ~= "DropdownButton" then
+                    v:Destroy()
+                end
+            end
+            local y = 50
+            for _, option in ipairs(DropdownConfig.Options) do
+                local optBtn = Instance.new("TextButton")
+                optBtn.Size = UDim2.new(1, -20, 0, 35)
+                optBtn.Position = UDim2.new(0, 10, 0, y)
+                optBtn.Text = option
+                optBtn.BackgroundColor3 = VXHConfig.Colors.Card
+                optBtn.TextColor3 = VXHConfig.Colors.Text
+                optBtn.Font = VXHConfig.DefaultFont
+                optBtn.TextSize = 14
+                optBtn.ZIndex = 16
+                optBtn.Parent = Dropdown
+
+                CreateCorner(optBtn, 6)
+
+                optBtn.MouseButton1Click:Connect(function()
+                    DropdownConfig.CurrentOption = option
+                    Button.Text = option
+                    DropdownConfig.Callback(option)
+                    open = false
+                    refreshOptions()
+                end)
+
+                y = y + 40
+            end
+            Dropdown.Size = UDim2.new(1, 0, 0, y)
+        else
+            for _, v in pairs(Dropdown:GetChildren()) do
+                if v:IsA("TextButton") and v.Name ~= "DropdownButton" then
+                    v:Destroy()
+                end
+            end
             Dropdown.Size = UDim2.new(1, 0, 0, 50)
-            Dropdown.BackgroundColor3 = VXHConfig.Colors.Background
-            Dropdown.BorderSizePixel = 0
-            Dropdown.LayoutOrder = #Tab.Elements + 1
-            Dropdown.ZIndex = 14
-            Dropdown.Parent = TabContent
-
-            CreateCorner(Dropdown, 12)
-            CreateStroke(Dropdown, 1, VXHConfig.Colors.Border, 0.7)
-
-            local DropdownLabel = Instance.new("TextLabel")
-            DropdownLabel.Name = "DropdownLabel"
-            DropdownLabel.Size = UDim2.new(0, 150, 1, 0)
-            DropdownLabel.Position = UDim2.new(0, 15, 0, 0)
-            DropdownLabel.BackgroundTransparency = 1
-            DropdownLabel.Text = DropdownConfig.Name
-            DropdownLabel.TextColor3 = VXHConfig.Colors.Text
-            DropdownLabel.TextSize = 16
-            DropdownLabel.Font = VXHConfig.DefaultFont
-            DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
-            DropdownLabel.ZIndex = 15
-            DropdownLabel.Parent = Dropdown
-
-            local DropdownButton = Instance.new("TextButton")
-            DropdownButton.Name = "DropdownButton"
-            DropdownButton.Size = UDim2.new(1, -170, 0, 35)
-            DropdownButton.Position = UDim2.new(0, 160, 0, 7.5)
-            DropdownButton.BackgroundColor3 = VXHConfig.Colors.Card
-            DropdownButton.BorderSizePixel = 0
-            DropdownButton.Text = DropdownConfig.CurrentOption
-            DropdownButton.TextColor3 = VXHConfig.Colors.Text
-            DropdownButton.TextSize = 14
-            DropdownButton.Font = VXHConfig.DefaultFont
-            DropdownButton.ZIndex = 15
-            DropdownButton.Parent = Dropdown
-
-            CreateCorner(DropdownButton, 8)
-            CreateStroke(DropdownButton, 1, VXHConfig.Colors.Border, 0.5)
-
-            -- Dropdown functionality would be implemented here
-            -- For now, just basic button functionality
-            DropdownButton.MouseButton1Click:Connect(function()
-                PlaySound("rbxasset://sounds/electronicpingshort.wav", 0.3)
-                print("Dropdown clicked:", DropdownConfig.Name)
-            end)
-
-            table.insert(Tab.Elements, Dropdown)
-            return Dropdown
         end
+    end
+
+    Button.MouseButton1Click:Connect(function()
+        open = not open
+        refreshOptions()
+    end)
+
+    table.insert(Tab.Elements, Dropdown)
+    return Dropdown
+end
 
         function Tab:CreateTextbox(config)
             local TextboxConfig = {
