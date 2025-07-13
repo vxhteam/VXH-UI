@@ -934,14 +934,13 @@ end
 function Tab:CreateDropdown(config)
     local DropdownConfig = {
         Name = config.Name or "Dropdown",
-        Options = config.Options or {"Option 1", "Option 2", "Option 3"},
+        Options = config.Options or {"Option 1"},
         CurrentOption = config.CurrentOption or config.Options[1],
         Flag = config.Flag or "Dropdown1",
         Callback = config.Callback or function() end
     }
 
     local Dropdown = Instance.new("Frame")
-    Dropdown.Name = "Dropdown_" .. DropdownConfig.Name
     Dropdown.Size = UDim2.new(1, 0, 0, 50)
     Dropdown.BackgroundColor3 = VXHConfig.Colors.Background
     Dropdown.BorderSizePixel = 0
@@ -952,80 +951,95 @@ function Tab:CreateDropdown(config)
     CreateCorner(Dropdown, 12)
     CreateStroke(Dropdown, 1, VXHConfig.Colors.Border, 0.7)
 
-    local DropdownLabel = Instance.new("TextLabel")
-    DropdownLabel.Size = UDim2.new(0, 150, 1, 0)
-    DropdownLabel.Position = UDim2.new(0, 15, 0, 0)
-    DropdownLabel.BackgroundTransparency = 1
-    DropdownLabel.Text = DropdownConfig.Name
-    DropdownLabel.TextColor3 = VXHConfig.Colors.Text
-    DropdownLabel.TextSize = 16
-    DropdownLabel.Font = VXHConfig.DefaultFont
-    DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
-    DropdownLabel.ZIndex = 15
-    DropdownLabel.Parent = Dropdown
+    local Label = Instance.new("TextLabel", Dropdown)
+    Label.Size = UDim2.new(0.5, 0, 1, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = DropdownConfig.Name
+    Label.TextColor3 = VXHConfig.Colors.Text
+    Label.TextSize = 16
+    Label.Font = VXHConfig.DefaultFont
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.ZIndex = 15
 
-    local DropdownButton = Instance.new("TextButton")
-    DropdownButton.Size = UDim2.new(1, -170, 0, 35)
-    DropdownButton.Position = UDim2.new(0, 160, 0, 7.5)
-    DropdownButton.BackgroundColor3 = VXHConfig.Colors.Card
-    DropdownButton.BorderSizePixel = 0
-    DropdownButton.Text = DropdownConfig.CurrentOption
-    DropdownButton.TextColor3 = VXHConfig.Colors.Text
-    DropdownButton.TextSize = 14
-    DropdownButton.Font = VXHConfig.DefaultFont
-    DropdownButton.ZIndex = 15
-    DropdownButton.Parent = Dropdown
+    local Button = Instance.new("TextButton", Dropdown)
+    Button.Size = UDim2.new(0.45, 0, 0.8, 0)
+    Button.Position = UDim2.new(0.5, 0, 0.1, 0)
+    Button.BackgroundColor3 = VXHConfig.Colors.Card
+    Button.Text = DropdownConfig.CurrentOption
+    Button.TextColor3 = VXHConfig.Colors.Text
+    Button.TextSize = 14
+    Button.Font = VXHConfig.DefaultFont
+    Button.ZIndex = 15
 
-    CreateCorner(DropdownButton, 8)
-    CreateStroke(DropdownButton, 1, VXHConfig.Colors.Border, 0.5)
+    CreateCorner(Button, 8)
+    CreateStroke(Button, 1, VXHConfig.Colors.Border, 0.5)
 
-    local DropdownList = Instance.new("Frame")
-    DropdownList.Name = "DropdownList"
-    DropdownList.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #DropdownConfig.Options * 30)
-    DropdownList.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y)
-    DropdownList.BackgroundColor3 = VXHConfig.Colors.Card
-    DropdownList.BorderSizePixel = 0
-    DropdownList.Visible = false
-    DropdownList.ZIndex = 100
-    DropdownList.ClipsDescendants = true
-    DropdownList.Parent = game:GetService("CoreGui") -- this avoids being blocked
+    -- Dropdown popup layer
+    local parentGui = (gethui and gethui()) or game.CoreGui
 
-    CreateCorner(DropdownList, 8)
-    CreateStroke(DropdownList, 1, VXHConfig.Colors.Border, 0.5)
+    local Overlay = Instance.new("ScreenGui")
+    Overlay.Name = "VXH_Dropdown_" .. DropdownConfig.Name
+    Overlay.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    Overlay.ResetOnSpawn = false
+    Overlay.IgnoreGuiInset = true
+    Overlay.Parent = parentGui
 
-    local function showOptions()
-        DropdownList:ClearAllChildren()
-        DropdownList.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #DropdownConfig.Options * 30)
-        DropdownList.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y)
+    local Blocker = Instance.new("TextButton", Overlay)
+    Blocker.Size = UDim2.new(1, 0, 1, 0)
+    Blocker.BackgroundTransparency = 1
+    Blocker.BorderSizePixel = 0
+    Blocker.Text = ""
+    Blocker.ZIndex = 999
+    Blocker.AutoButtonColor = false
+
+    local List = Instance.new("Frame", Overlay)
+    List.BackgroundColor3 = VXHConfig.Colors.Card
+    List.BorderSizePixel = 0
+    List.Visible = false
+    List.ZIndex = 1000
+    CreateCorner(List, 8)
+    CreateStroke(List, 1, VXHConfig.Colors.Border, 0.7)
+
+    Button.MouseButton1Click:Connect(function()
+        List:ClearAllChildren()
+
+        local count = #DropdownConfig.Options
+        local buttonAbsPos = Button.AbsolutePosition
+        local buttonSize = Button.AbsoluteSize
+
+        List.Position = UDim2.new(0, buttonAbsPos.X, 0, buttonAbsPos.Y + buttonSize.Y)
+        List.Size = UDim2.new(0, buttonSize.X, 0, 30 * count)
+        List.Visible = true
+        Overlay.Enabled = true
+        Blocker.Visible = true
 
         for _, option in ipairs(DropdownConfig.Options) do
-            local OptionBtn = Instance.new("TextButton")
-            OptionBtn.Size = UDim2.new(1, 0, 0, 30)
-            OptionBtn.BackgroundColor3 = VXHConfig.Colors.Background
-            OptionBtn.Text = option
-            OptionBtn.Font = VXHConfig.DefaultFont
-            OptionBtn.TextColor3 = VXHConfig.Colors.Text
-            OptionBtn.TextSize = 14
-            OptionBtn.BorderSizePixel = 0
-            OptionBtn.ZIndex = 101
-            OptionBtn.Parent = DropdownList
+            local Option = Instance.new("TextButton", List)
+            Option.Size = UDim2.new(1, 0, 0, 30)
+            Option.BackgroundColor3 = VXHConfig.Colors.Background
+            Option.Text = option
+            Option.Font = VXHConfig.DefaultFont
+            Option.TextColor3 = VXHConfig.Colors.Text
+            Option.TextSize = 14
+            Option.BorderSizePixel = 0
+            Option.ZIndex = 1001
 
-            OptionBtn.MouseButton1Click:Connect(function()
+            Option.MouseButton1Click:Connect(function()
                 DropdownConfig.CurrentOption = option
-                DropdownButton.Text = option
-                DropdownList.Visible = false
+                Button.Text = option
                 DropdownConfig.Callback(option)
+                List.Visible = false
+                Overlay.Enabled = false
+                Blocker.Visible = false
             end)
         end
-        DropdownList.Visible = true
-    end
+    end)
 
-    DropdownButton.MouseButton1Click:Connect(function()
-        if DropdownList.Visible then
-            DropdownList.Visible = false
-        else
-            showOptions()
-        end
+    Blocker.MouseButton1Click:Connect(function()
+        List.Visible = false
+        Overlay.Enabled = false
+        Blocker.Visible = false
     end)
 
     table.insert(Tab.Elements, Dropdown)
