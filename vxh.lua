@@ -705,35 +705,33 @@ function VXH:CreateWindow(config)
         Callback = config.Callback or function() end
     }
 
-function Tab:CreateInput(config)
-			local input = Instance.new("TextBox", TabContent)
-			input.Size = UDim2.new(1, -10, 0, 40)
-			input.PlaceholderText = config.PlaceholderText or "Enter number..."
-			input.Text = ""
-			input.TextColor3 = VXHConfig.Colors.Text
-			input.BackgroundColor3 = VXHConfig.Colors.Card
-			input.Font = VXHConfig.DefaultFont
-			input.TextSize = 14
-			CreateCorner(input, 6)
+  function Tab:CreateInput(config)
+        local input = Instance.new("TextBox", TabContent)
+        input.Size = UDim2.new(1, -10, 0, 40)
+        input.PlaceholderText = config.PlaceholderText or "Enter number..."
+        input.Text = ""
+        input.TextColor3 = VXHConfig.Colors.Text
+        input.BackgroundColor3 = VXHConfig.Colors.Card
+        input.Font = VXHConfig.DefaultFont
+        input.TextSize = 14
+        CreateCorner(input, 6)
 
-			input.FocusLost:Connect(function(enter)
-				if enter then
-					local val = tonumber(input.Text)
-					if val and config.Callback then
-						config.Callback(val)
-					end
-				end
-			end)
-		end
+        input.FocusLost:Connect(function(enter)
+            if enter then
+                local val = tonumber(input.Text)
+                if val and config.Callback then
+                    config.Callback(val)
+                end
+            end
+        end)
 
-		table.insert(Window.Tabs, Tab)
-		return Tab
-	end
+        table.insert(Tab.Elements, input)
+        return input
+    end
 
-	return Window
+    table.insert(Window.Tabs, Tab)
+    return Tab
 end
-
-return VXH
 
         function Tab:CreateToggle(config)
             local ToggleConfig = {
