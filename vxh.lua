@@ -931,11 +931,12 @@ function Tab:CreateSlider(config)
 	return Slider
 end
 
-        function Tab:CreateDropdown(config)
+       function Tab:CreateDropdown(config)
     local DropdownConfig = {
         Name = config.Name or "Dropdown",
-        Options = config.Options or {"Option 1", "Option 2"},
-        CurrentOption = config.CurrentOption or (config.Options and config.Options[1]) or "None",
+        Options = config.Options or {"Option 1"},
+        CurrentOption = config.CurrentOption or config.Options[1],
+        Flag = config.Flag or "Dropdown1",
         Callback = config.Callback or function() end
     }
 
@@ -951,95 +952,87 @@ end
     CreateCorner(Dropdown, 12)
     CreateStroke(Dropdown, 1, VXHConfig.Colors.Border, 0.7)
 
-    local Label = Instance.new("TextLabel")
-    Label.Name = "DropdownLabel"
-    Label.Size = UDim2.new(0, 150, 1, 0)
-    Label.Position = UDim2.new(0, 15, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = DropdownConfig.Name
-    Label.TextColor3 = VXHConfig.Colors.Text
-    Label.TextSize = 16
-    Label.Font = VXHConfig.DefaultFont
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.ZIndex = 15
-    Label.Parent = Dropdown
+    local DropdownLabel = Instance.new("TextLabel")
+    DropdownLabel.Size = UDim2.new(0, 150, 1, 0)
+    DropdownLabel.Position = UDim2.new(0, 15, 0, 0)
+    DropdownLabel.BackgroundTransparency = 1
+    DropdownLabel.Text = DropdownConfig.Name
+    DropdownLabel.TextColor3 = VXHConfig.Colors.Text
+    DropdownLabel.TextSize = 16
+    DropdownLabel.Font = VXHConfig.DefaultFont
+    DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+    DropdownLabel.ZIndex = 15
+    DropdownLabel.Parent = Dropdown
 
-    local Button = Instance.new("TextButton")
-    Button.Name = "DropdownButton"
-    Button.Size = UDim2.new(1, -170, 0, 35)
-    Button.Position = UDim2.new(0, 160, 0, 7.5)
-    Button.BackgroundColor3 = VXHConfig.Colors.Card
-    Button.BorderSizePixel = 0
-    Button.Text = DropdownConfig.CurrentOption
-    Button.TextColor3 = VXHConfig.Colors.Text
-    Button.TextSize = 14
-    Button.Font = VXHConfig.DefaultFont
-    Button.ZIndex = 15
-    Button.Parent = Dropdown
+    local DropdownButton = Instance.new("TextButton")
+    DropdownButton.Size = UDim2.new(1, -170, 0, 35)
+    DropdownButton.Position = UDim2.new(0, 160, 0, 7.5)
+    DropdownButton.BackgroundColor3 = VXHConfig.Colors.Card
+    DropdownButton.BorderSizePixel = 0
+    DropdownButton.Text = DropdownConfig.CurrentOption
+    DropdownButton.TextColor3 = VXHConfig.Colors.Text
+    DropdownButton.TextSize = 14
+    DropdownButton.Font = VXHConfig.DefaultFont
+    DropdownButton.ZIndex = 15
+    DropdownButton.Parent = Dropdown
 
-    CreateCorner(Button, 8)
-    CreateStroke(Button, 1, VXHConfig.Colors.Border, 0.5)
+    CreateCorner(DropdownButton, 8)
+    CreateStroke(DropdownButton, 1, VXHConfig.Colors.Border, 0.5)
+
+    -- Dropdown list container
+    local OptionList = Instance.new("Frame")
+    OptionList.Size = UDim2.new(1, 0, 0, 0)
+    OptionList.Position = UDim2.new(0, 0, 1, 0)
+    OptionList.BackgroundColor3 = VXHConfig.Colors.Card
+    OptionList.ClipsDescendants = true
+    OptionList.BorderSizePixel = 0
+    OptionList.Visible = false
+    OptionList.ZIndex = 20
+    OptionList.Parent = Dropdown
+
+    CreateStroke(OptionList, 1, VXHConfig.Colors.Border, 0.4)
+    CreateCorner(OptionList, 8)
+
+    local Layout = Instance.new("UIListLayout", OptionList)
+    Layout.Padding = UDim.new(0, 4)
 
     local open = false
-    local optionButtons = {}
 
-    local function closeDropdown()
-        for _, btn in ipairs(optionButtons) do
-            btn:Destroy()
-        end
-        optionButtons = {}
-        Dropdown.Size = UDim2.new(1, 0, 0, 50)
-        open = false
+    local function ToggleDropdown()
+        open = not open
+        OptionList.Visible = open
+        OptionList.Size = open and UDim2.new(1, 0, 0, #DropdownConfig.Options * 32 + 8) or UDim2.new(1, 0, 0, 0)
     end
 
-    local function openDropdown()
-        local yOffset = 50
-        for i, option in ipairs(DropdownConfig.Options) do
-            local optionBtn = Instance.new("TextButton")
-            optionBtn.Name = "Option_" .. option
-            optionBtn.Size = UDim2.new(1, -30, 0, 30)
-            optionBtn.Position = UDim2.new(0, 15, 0, yOffset)
-            optionBtn.BackgroundColor3 = VXHConfig.Colors.Card
-            optionBtn.BorderSizePixel = 0
-            optionBtn.Text = option
-            optionBtn.TextColor3 = VXHConfig.Colors.Text
-            optionBtn.TextSize = 14
-            optionBtn.Font = VXHConfig.DefaultFont
-            optionBtn.ZIndex = 15
-            optionBtn.Parent = Dropdown
-            CreateCorner(optionBtn, 6)
+    DropdownButton.MouseButton1Click:Connect(ToggleDropdown)
 
-            optionBtn.MouseButton1Click:Connect(function()
-                Button.Text = option
-                DropdownConfig.CurrentOption = option
-                DropdownConfig.Callback(option)
-                closeDropdown()
-            end)
+    for _, option in ipairs(DropdownConfig.Options) do
+        local OptionButton = Instance.new("TextButton")
+        OptionButton.Size = UDim2.new(1, -8, 0, 28)
+        OptionButton.Position = UDim2.new(0, 4, 0, 0)
+        OptionButton.BackgroundColor3 = VXHConfig.Colors.Background
+        OptionButton.BorderSizePixel = 0
+        OptionButton.Text = option
+        OptionButton.TextColor3 = VXHConfig.Colors.Text
+        OptionButton.TextSize = 14
+        OptionButton.Font = VXHConfig.DefaultFont
+        OptionButton.ZIndex = 21
+        OptionButton.Parent = OptionList
 
-            table.insert(optionButtons, optionBtn)
-            yOffset = yOffset + 35
-        end
-        Dropdown.Size = UDim2.new(1, 0, 0, yOffset)
-        open = true
+        CreateCorner(OptionButton, 6)
+
+        OptionButton.MouseButton1Click:Connect(function()
+            DropdownConfig.CurrentOption = option
+            DropdownButton.Text = option
+            DropdownConfig.Callback(option)
+            ToggleDropdown()
+        end)
     end
-
-    Button.MouseButton1Click:Connect(function()
-        if open then
-            closeDropdown()
-        else
-            openDropdown()
-        end
-    end)
-
-    Dropdown.MouseLeave:Connect(function()
-        if open then
-            closeDropdown()
-        end
-    end)
 
     table.insert(Tab.Elements, Dropdown)
     return Dropdown
 end
+
 
         function Tab:CreateTextbox(config)
             local TextboxConfig = {
