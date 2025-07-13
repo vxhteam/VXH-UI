@@ -931,92 +931,118 @@ function Tab:CreateSlider(config)
 	return Slider
 end
 
-function Tab:CreateDropdown(config)
-	local DropdownConfig = {
-		Name = config.Name or "Dropdown",
-		Options = config.Options or {"Option 1", "Option 2"},
-		CurrentOption = config.CurrentOption or config.Options[1],
-		Callback = config.Callback or function() end
-	}
+function Tab:CreateDropdown(cfg)
+    local opt = {
+        Name = cfg.Name or "Dropdown",
+        Options = cfg.Option or {"One","Two"},
+        CurrentOption = cfg.CurrentOption or cfg.Options[1],
+        Callback = cfg.Callback or function() end
+    }
 
-	local Container = Instance.new("Frame")
-	Container.Size = UDim2.new(1, 0, 0, 50)
-	Container.BackgroundTransparency = 1
-	Container.LayoutOrder = #Tab.Elements + 1
-	Container.Parent = TabContent
+    ------------------------------------------------------------------ row holder
+    local Row = Instance.new("Frame")
+    Row.Size = UDim2.new(1,0,0,40)
+    Row.BackgroundTransparency = 1
+    Row.LayoutOrder = #Tab.Elements + 1
+    Row.Parent = TabContent
+    table.insert(Tab.Elements, Row)
 
-	local DropdownMain = Instance.new("TextButton")
-	DropdownMain.Name = "DropdownMain"
-	DropdownMain.Size = UDim2.new(1, 0, 0, 40)
-	DropdownMain.BackgroundColor3 = VXHConfig.Colors.Card
-	DropdownMain.TextColor3 = VXHConfig.Colors.Text
-	DropdownMain.Font = VXHConfig.DefaultFont
-	DropdownMain.TextSize = 16
-	DropdownMain.Text = DropdownConfig.Name .. ": " .. DropdownConfig.CurrentOption
-	DropdownMain.BorderSizePixel = 0
-	DropdownMain.Parent = Container
-	CreateCorner(DropdownMain, 8)
-	CreateStroke(DropdownMain, 1, VXHConfig.Colors.Border, 0.5)
+    ------------------------------------------------------------------ main button
+    local Main = Instance.new("TextButton", Row)
+    Main.Size = UDim2.new(1,-14,1,0)
+    Main.Position = UDim2.new(0,7,0,0)
+    Main.BackgroundColor3 = VXHConfig.Colors.Card
+    Main.Text = opt.Name .. ": " .. opt.CurrentOption
+    Main.TextColor3 = VXHConfig.Colors.Text
+    Main.TextSize   = 16
+    Main.Font       = VXHConfig.DefaultFont
+    Main.BorderSizePixel = 0
+    CreateCorner(Main,8)
+    CreateStroke(Main,1,VXHConfig.Colors.Border,0.5)
 
-	local OptionHolder = Instance.new("Frame")
-	OptionHolder.Name = "Options"
-	OptionHolder.Size = UDim2.new(1, 0, 0, #DropdownConfig.Options * 32)
-	OptionHolder.Position = UDim2.new(0, 0, 1, 5)
-	OptionHolder.BackgroundColor3 = VXHConfig.Colors.Background
-	OptionHolder.BorderSizePixel = 0
-	OptionHolder.Visible = false
-	OptionHolder.ZIndex = 99
-	OptionHolder.ClipsDescendants = true
-	OptionHolder.Parent = Container
-	CreateCorner(OptionHolder, 8)
-	CreateStroke(OptionHolder, 1, VXHConfig.Colors.Border, 0.4)
+    ------------------------------------------------------------------ global popup holder (one‑time)
+    if not game.CoreGui:FindFirstChild("VXH_Drop_Popup") then
+        local P = Instance.new("Frame",game.CoreGui)
+        P.Name = "VXH_Drop_Popup"
+        P.BackgroundTransparency = 1
+        P.Size = UDim2.new(1,0,1,0)
+        P.Position = UDim2.new(0,0,0,0)
+        P.ZIndex = 999
+        P.ClipsDescendants = false
+    end
+    local PopupRoot = game.CoreGui:FindFirstChild("VXH_Drop_Popup")
 
-	local Layout = Instance.new("UIListLayout", OptionHolder)
-	Layout.Padding = UDim.new(0, 2)
+    ------------------------------------------------------------------ option list
+    local ListFrame = Instance.new("Frame")
+    ListFrame.Visible = false
+    ListFrame.BackgroundColor3 = VXHConfig.Colors.Background
+    ListFrame.BorderSizePixel  = 0
+    ListFrame.ZIndex = 1000
+    CreateCorner(ListFrame,8)
+    CreateStroke(ListFrame,1,VXHConfig.Colors.Border,0.4)
+    ListFrame.Parent = PopupRoot
 
-	-- Dropdown toggle
-	local opened = false
-	DropdownMain.MouseButton1Click:Connect(function()
-		opened = not opened
-		OptionHolder.Visible = opened
-	end)
+    local UIL = Instance.new("UIListLayout",ListFrame)
+    UIL.Padding   = UDim.new(0,4)
+    UIL.SortOrder = Enum.SortOrder.LayoutOrder
 
-	-- Add options
-	for _, opt in ipairs(DropdownConfig.Options) do
-		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(1, -10, 0, 30)
-		btn.BackgroundColor3 = VXHConfig.Colors.Card
-		btn.TextColor3 = VXHConfig.Colors.Text
-		btn.Font = VXHConfig.DefaultFont
-		btn.TextSize = 14
-		btn.Text = opt
-		btn.BorderSizePixel = 0
-		btn.ZIndex = 100
-		btn.Parent = OptionHolder
-		CreateCorner(btn, 6)
+    local function refreshSize()
+        ListFrame.Size = UDim2.new(0, Main.AbsoluteSize.X, 0, #opt.Options*30 + 8)
+    end
+    refreshSize()
+			
+    for _,choice in ipairs(opt.Options) do
+        local B = Instance.new("TextButton",ListFrame)
+        B.Size = UDim2.new(1,-8,0,28)
+        B.Position = UDim2.new(0,4,0,0)
+        B.BackgroundColor3 = VXHConfig.Colors.Card
+        B.Text = choice
+        B.TextColor3 = VXHConfig.Colors.Text
+        B.TextSize = 14
+        B.Font = VXHConfig.DefaultFont
+        B.BorderSizePixel = 0
+        B.ZIndex = 1001
+        CreateCorner(B,6)
 
-		btn.MouseButton1Click:Connect(function()
-			DropdownConfig.CurrentOption = opt
-			DropdownMain.Text = DropdownConfig.Name .. ": " .. opt
-			OptionHolder.Visible = false
-			opened = false
-			DropdownConfig.Callback(opt)
-		end)
+        B.MouseEnter:Connect(function() B.BackgroundColor3 = VXHConfig.Colors.Hover end)
+        B.MouseLeave:Connect(function() B.BackgroundColor3 = VXHConfig.Colors.Card  end)
 
-		btn.MouseEnter:Connect(function()
-			btn.BackgroundColor3 = VXHConfig.Colors.Hover
-		end)
+        B.MouseButton1Click:Connect(function()
+            Main.Text = opt.Name .. ": " .. choice
+            ListFrame.Visible = false
+            pcall(opt.Callback, choice)
+        end)
+    end
 
-		btn.MouseLeave:Connect(function()
-			btn.BackgroundColor3 = VXHConfig.Colors.Card
-		end)
-	end
+    ------------------------------------------------------------------ toggle open/close
+    Main.MouseButton1Click:Connect(function()
+        local open = not ListFrame.Visible
+        if open then
+            -- position list right under the main button
+            refreshSize()
+            ListFrame.Position = UDim2.fromOffset(
+                Main.AbsolutePosition.X,
+                Main.AbsolutePosition.Y + Main.AbsoluteSize.Y + 2
+            )
+        end
+        ListFrame.Visible = open
+    end)
 
-	table.insert(Tab.Elements, Container)
-	return Container
+    ------------------------------------------------------------------ click outside to close
+    game:GetService("UserInputService").InputBegan:Connect(function(inp, gp)
+        if gp then return end
+        if ListFrame.Visible and inp.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mousePos = inp.Position
+            local absPos, absSize = ListFrame.AbsolutePosition, ListFrame.AbsoluteSize
+            if not (mousePos.X >= absPos.X and mousePos.X <= absPos.X+absSize.X and
+                    mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y+absSize.Y) then
+                ListFrame.Visible = false
+            end
+        end
+    end)
+
+    return Row
 end
-
-
 
         function Tab:CreateTextbox(config)
             local TextboxConfig = {
