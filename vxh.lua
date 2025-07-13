@@ -698,6 +698,39 @@ function VXH:CreateWindow(config)
             return Button
         end
 
+        local InputBox = Instance.new("TextBox")
+    InputBox.Name = "Input_" .. InputConfig.Name
+    InputBox.Size = UDim2.new(1, 0, 0, 50)
+    InputBox.BackgroundColor3 = VXHConfig.Colors.Background
+    InputBox.BorderSizePixel = 0
+    InputBox.Text = ""
+    InputBox.PlaceholderText = InputConfig.PlaceholderText
+    InputBox.TextColor3 = VXHConfig.Colors.Text
+    InputBox.TextSize = 16
+    InputBox.Font = VXHConfig.DefaultFont
+    InputBox.TextXAlignment = Enum.TextXAlignment.Left
+    InputBox.ClearTextOnFocus = false
+    InputBox.LayoutOrder = #Tab.Elements + 1
+    InputBox.ZIndex = 14
+    InputBox.Parent = TabContent
+
+    CreateCorner(InputBox, 12)
+    CreateStroke(InputBox, 1, VXHConfig.Colors.Border, 0.7)
+
+    table.insert(Tab.Elements, InputBox)
+
+    InputBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            local number = tonumber(InputBox.Text)
+            if number then
+                pcall(function()
+                    InputConfig.Callback(number)
+                end)
+            end
+        end
+    end)
+end
+
         function Tab:CreateToggle(config)
             local ToggleConfig = {
                 Name = config.Name or "Toggle",
