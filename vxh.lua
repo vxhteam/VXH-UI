@@ -698,7 +698,14 @@ function VXH:CreateWindow(config)
             return Button
         end
 
-        local InputBox = Instance.new("TextBox")
+ function Tab:CreateInput(config)
+    local InputConfig = {
+        Name = config.Name or "Input",
+        PlaceholderText = config.PlaceholderText or "Enter number...",
+        Callback = config.Callback or function() end
+    }
+
+    local InputBox = Instance.new("TextBox")
     InputBox.Name = "Input_" .. InputConfig.Name
     InputBox.Size = UDim2.new(1, 0, 0, 50)
     InputBox.BackgroundColor3 = VXHConfig.Colors.Background
@@ -729,6 +736,8 @@ function VXH:CreateWindow(config)
             end
         end
     end)
+
+    return InputBox
 end
 
         function Tab:CreateToggle(config)
