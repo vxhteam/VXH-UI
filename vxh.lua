@@ -698,40 +698,48 @@ function VXH:CreateWindow(config)
             return Button
         end
 
- function Tab:CreateInput(config)
+function Tab:CreateInput(config)
     local InputConfig = {
         Name = config.Name or "Input",
         PlaceholderText = config.PlaceholderText or "Enter number...",
         Callback = config.Callback or function() end
     }
 
-  function Tab:CreateInput(config)
-        local input = Instance.new("TextBox", TabContent)
-        input.Size = UDim2.new(1, -10, 0, 40)
-        input.PlaceholderText = config.PlaceholderText or "Enter number..."
-        input.Text = ""
-        input.TextColor3 = VXHConfig.Colors.Text
-        input.BackgroundColor3 = VXHConfig.Colors.Card
-        input.Font = VXHConfig.DefaultFont
-        input.TextSize = 14
-        CreateCorner(input, 6)
+    local InputBox = Instance.new("TextBox")
+    InputBox.Name = "Input_" .. InputConfig.Name
+    InputBox.Size = UDim2.new(1, 0, 0, 50)
+    InputBox.BackgroundColor3 = VXHConfig.Colors.Card
+    InputBox.BorderSizePixel = 0
+    InputBox.Text = ""
+    InputBox.PlaceholderText = InputConfig.PlaceholderText
+    InputBox.TextColor3 = VXHConfig.Colors.Text
+    InputBox.TextSize = 16
+    InputBox.Font = VXHConfig.DefaultFont
+    InputBox.TextXAlignment = Enum.TextXAlignment.Left
+    InputBox.ClearTextOnFocus = false
+    InputBox.LayoutOrder = #Tab.Elements + 1
+    InputBox.ZIndex = 14
+    InputBox.Parent = TabContent
 
-        input.FocusLost:Connect(function(enter)
-            if enter then
-                local val = tonumber(input.Text)
-                if val and config.Callback then
-                    config.Callback(val)
-                end
+    CreateCorner(InputBox, 8)
+    CreateStroke(InputBox, 1, VXHConfig.Colors.Border, 0.7)
+
+    -- Input logic
+    InputBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            local number = tonumber(InputBox.Text)
+            if number then
+                pcall(function()
+                    InputConfig.Callback(number)
+                end)
             end
-        end)
+        end
+    end)
 
-        table.insert(Tab.Elements, input)
-        return input
-    end
-
-    table.insert(Window.Tabs, Tab)
-    return Tab
+    table.insert(Tab.Elements, InputBox)
+    return InputBox
 end
+
 
         function Tab:CreateToggle(config)
             local ToggleConfig = {
