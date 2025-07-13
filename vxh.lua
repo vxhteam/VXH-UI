@@ -931,7 +931,7 @@ function Tab:CreateSlider(config)
 	return Slider
 end
 
-   function Tab:CreateDropdown(config)
+  function Tab:CreateDropdown(config)
     local DropdownConfig = {
         Name = config.Name or "Dropdown",
         Options = config.Options or {"Option 1", "Option 2", "Option 3"},
@@ -940,17 +940,16 @@ end
         Callback = config.Callback or function() end
     }
 
+    -- Main dropdown container
     local Dropdown = Instance.new("Frame")
     Dropdown.Name = "Dropdown_" .. DropdownConfig.Name
     Dropdown.Size = UDim2.new(1, 0, 0, 50)
     Dropdown.BackgroundColor3 = VXHConfig.Colors.Background
     Dropdown.BorderSizePixel = 0
+    Dropdown.ZIndex = 20
     Dropdown.LayoutOrder = #Tab.Elements + 1
-    Dropdown.ZIndex = 14
-    Dropdown.Parent = TabContent
-
     Dropdown.ClipsDescendants = false
-    TabContent.ClipsDescendants = false
+    Dropdown.Parent = TabContent
 
     CreateCorner(Dropdown, 12)
     CreateStroke(Dropdown, 1, VXHConfig.Colors.Border, 0.7)
@@ -965,7 +964,7 @@ end
     DropdownLabel.TextSize = 16
     DropdownLabel.Font = VXHConfig.DefaultFont
     DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
-    DropdownLabel.ZIndex = 15
+    DropdownLabel.ZIndex = 21
     DropdownLabel.Parent = Dropdown
 
     local DropdownButton = Instance.new("TextButton")
@@ -978,61 +977,54 @@ end
     DropdownButton.TextColor3 = VXHConfig.Colors.Text
     DropdownButton.TextSize = 14
     DropdownButton.Font = VXHConfig.DefaultFont
-    DropdownButton.ZIndex = 15
+    DropdownButton.ZIndex = 22
+    DropdownButton.ClipsDescendants = false
     DropdownButton.Parent = Dropdown
 
     CreateCorner(DropdownButton, 8)
     CreateStroke(DropdownButton, 1, VXHConfig.Colors.Border, 0.5)
 
-    -- Dropdown List
+    -- Option frame
     local OptionFrame = Instance.new("Frame")
     OptionFrame.Name = "OptionFrame"
-    OptionFrame.Size = UDim2.new(1, -170, 0, 0)
+    OptionFrame.Size = UDim2.new(1, -170, 0, #DropdownConfig.Options * 32)
     OptionFrame.Position = UDim2.new(0, 160, 1, 0)
     OptionFrame.BackgroundColor3 = VXHConfig.Colors.Card
-    OptionFrame.BorderSizePixel = 0
     OptionFrame.Visible = false
-    OptionFrame.ZIndex = 500 -- VERY HIGH so it's not blocked
     OptionFrame.ClipsDescendants = false
+    OptionFrame.ZIndex = 500
     OptionFrame.Parent = Dropdown
 
-    CreateCorner(OptionFrame, 8)
-    CreateStroke(OptionFrame, 1, VXHConfig.Colors.Border, 0.5)
+    CreateCorner(OptionFrame, 6)
+    CreateStroke(OptionFrame, 1, VXHConfig.Colors.Border, 0.4)
 
-    local function updateOptions()
-        OptionFrame:ClearAllChildren()
-        local optionCount = #DropdownConfig.Options
-        OptionFrame.Size = UDim2.new(1, 0, 0, optionCount * 35)
+    -- Create option buttons
+    for i, option in ipairs(DropdownConfig.Options) do
+        local Option = Instance.new("TextButton")
+        Option.Name = "Option_" .. option
+        Option.Size = UDim2.new(1, 0, 0, 30)
+        Option.Position = UDim2.new(0, 0, 0, (i - 1) * 32)
+        Option.BackgroundColor3 = VXHConfig.Colors.Card
+        Option.Text = option
+        Option.TextColor3 = VXHConfig.Colors.Text
+        Option.TextSize = 14
+        Option.Font = VXHConfig.DefaultFont
+        Option.ZIndex = 501
+        Option.BorderSizePixel = 0
+        Option.Parent = OptionFrame
 
-        for _, option in ipairs(DropdownConfig.Options) do
-            local Option = Instance.new("TextButton")
-            Option.Size = UDim2.new(1, 0, 0, 35)
-            Option.Position = UDim2.new(0, 0, 0, (_ - 1) * 35)
-            Option.BackgroundColor3 = VXHConfig.Colors.Card
-            Option.BorderSizePixel = 0
-            Option.Text = option
-            Option.TextColor3 = VXHConfig.Colors.Text
-            Option.TextSize = 14
-            Option.Font = VXHConfig.DefaultFont
-            Option.ZIndex = 501
-            Option.Parent = OptionFrame
+        CreateCorner(Option, 4)
 
-            CreateCorner(Option, 6)
-
-            Option.MouseButton1Click:Connect(function()
-                DropdownConfig.CurrentOption = option
-                DropdownButton.Text = option
-                OptionFrame.Visible = false
-                DropdownConfig.Callback(option)
-            end)
-        end
+        Option.MouseButton1Click:Connect(function()
+            DropdownConfig.CurrentOption = option
+            DropdownButton.Text = option
+            OptionFrame.Visible = false
+            DropdownConfig.Callback(option)
+        end)
     end
 
     DropdownButton.MouseButton1Click:Connect(function()
         OptionFrame.Visible = not OptionFrame.Visible
-        if OptionFrame.Visible then
-            updateOptions()
-        end
     end)
 
     table.insert(Tab.Elements, Dropdown)
