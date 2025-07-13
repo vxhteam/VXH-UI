@@ -237,7 +237,7 @@ Input fields allow text entry.
 
 ```lua
 Tab:CreateInput({
-    Name = "Set Prediction",
+    Name = "",
     PlaceholderText = "Enter number...",
     Callback = function(val)
         print("Input number:", val)
