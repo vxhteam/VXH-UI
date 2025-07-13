@@ -1236,6 +1236,17 @@ getgenv().VXHDebug = true
 -- This will print additional debug information
 -- Check the console for debug messages
 ```
+## 🔢 Creating an InputBox (Numbers Only)
+
+```lua
+Tab:CreateInput({
+    Name = "Set Prediction",
+    PlaceholderText = "Enter number...",
+    Callback = function(val)
+        print("Input number:", val)
+    end
+})
+
 
 ### Getting Help
 
