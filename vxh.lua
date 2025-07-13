@@ -832,13 +832,12 @@ end
             return Toggle
         end
 
-      function Tab:CreateSlider(config)
+   function Tab:CreateSlider(config)
     local SliderConfig = {
         Name = config.Name or "Slider",
         Range = config.Range or {0, 100},
         Increment = config.Increment or 1,
         CurrentValue = config.CurrentValue or 0,
-        Flag = config.Flag or "Slider1",
         Callback = config.Callback or function() end
     }
 
@@ -892,34 +891,43 @@ end
     ValueLabel.ZIndex = 15
     ValueLabel.Parent = Slider
 
+    local dragging = false
     local function UpdateSlider(val)
+        val = math.clamp(val, SliderConfig.Range[1], SliderConfig.Range[2])
         local percent = (val - SliderConfig.Range[1]) / (SliderConfig.Range[2] - SliderConfig.Range[1])
         Fill.Size = UDim2.new(percent, 0, 1, 0)
         ValueLabel.Text = tostring(val)
         SliderConfig.CurrentValue = val
-        SliderConfig.Callback(val) -- ✅ THIS is what runs the user’s function!
+        SliderConfig.Callback(val)
     end
 
-    local dragging = false
+    -- Touch and Mouse support
+    local function BeginDrag(input)
+        dragging = true
+        local function Move(inputMove)
+            if not dragging then return end
+            local pos = inputMove.Position.X
+            local percent = math.clamp((pos - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
+            local val = SliderConfig.Range[1] + (SliderConfig.Range[2] - SliderConfig.Range[1]) * percent
+            val = math.floor(val / SliderConfig.Increment + 0.5) * SliderConfig.Increment
+            UpdateSlider(val)
+        end
+
+        local moveConn = game:GetService("UserInputService").InputChanged:Connect(Move)
+        local endConn
+
+        endConn = game:GetService("UserInputService").InputEnded:Connect(function(endInput)
+            if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+                moveConn:Disconnect()
+                endConn:Disconnect()
+            end
+        end)
+    end
 
     Track.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local percent = math.clamp((input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
-            local value = SliderConfig.Range[1] + (SliderConfig.Range[2] - SliderConfig.Range[1]) * percent
-            value = math.floor(value / SliderConfig.Increment) * SliderConfig.Increment
-            UpdateSlider(value)
-        end
-    end)
-
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            BeginDrag(input)
         end
     end)
 
@@ -927,6 +935,7 @@ end
     table.insert(Tab.Elements, Slider)
     return Slider
 end
+
 
         function Tab:CreateDropdown(config)
             local DropdownConfig = {
