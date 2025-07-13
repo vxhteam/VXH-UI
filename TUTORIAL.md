@@ -215,16 +215,6 @@ Tab:CreateSlider({
     end
 })
 ```
-## 🔢 Creating an InputBox (Numbers Only)
-
-```lua
-Tab:CreateInput({
-    Name = "Set Prediction",
-    PlaceholderText = "Enter number...",
-    Callback = function(val)
-        print("Input number:", val)
-    end
-})
 
 
 **Configuration Options:**
@@ -247,17 +237,13 @@ Input fields allow text entry.
 
 ```lua
 Tab:CreateInput({
-    Name = "Player Name",
-    PlaceholderText = "Enter player name",
-    NumbersOnly = false,                 -- Allow only numbers
-    OnEnter = true,                      -- Execute on Enter key
-    RemoveTextAfterFocusLost = false,    -- Clear text when unfocused
-    Flag = "PlayerName",                 -- Unique identifier
-    Callback = function(text)
-        print("Input text: " .. text)
-        -- Process input text
+    Name = "Set Prediction",
+    PlaceholderText = "Enter number...",
+    Callback = function(val)
+        print("Input number:", val)
     end
 })
+
 ```
 
 **Configuration Options:**
