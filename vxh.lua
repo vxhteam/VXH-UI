@@ -931,11 +931,11 @@ function Tab:CreateSlider(config)
 	return Slider
 end
 
-        function Tfunction Tab:CreateDropdown(config)
+        function Tab:CreateDropdown(config)
     local DropdownConfig = {
         Name = config.Name or "Dropdown",
         Options = config.Options or {"Option 1", "Option 2"},
-        CurrentOption = config.CurrentOption or config.Options[1],
+        CurrentOption = config.CurrentOption or (config.Options and config.Options[1]) or "None",
         Callback = config.Callback or function() end
     }
 
@@ -953,8 +953,8 @@ end
 
     local Label = Instance.new("TextLabel")
     Label.Name = "DropdownLabel"
-    Label.Size = UDim2.new(0.4, 0, 1, 0)
-    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.Size = UDim2.new(0, 150, 1, 0)
+    Label.Position = UDim2.new(0, 15, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = DropdownConfig.Name
     Label.TextColor3 = VXHConfig.Colors.Text
@@ -966,9 +966,10 @@ end
 
     local Button = Instance.new("TextButton")
     Button.Name = "DropdownButton"
-    Button.Size = UDim2.new(0.5, 0, 0.7, 0)
-    Button.Position = UDim2.new(0.45, 0, 0.15, 0)
+    Button.Size = UDim2.new(1, -170, 0, 35)
+    Button.Position = UDim2.new(0, 160, 0, 7.5)
     Button.BackgroundColor3 = VXHConfig.Colors.Card
+    Button.BorderSizePixel = 0
     Button.Text = DropdownConfig.CurrentOption
     Button.TextColor3 = VXHConfig.Colors.Text
     Button.TextSize = 14
@@ -977,54 +978,63 @@ end
     Button.Parent = Dropdown
 
     CreateCorner(Button, 8)
+    CreateStroke(Button, 1, VXHConfig.Colors.Border, 0.5)
 
     local open = false
-    local function refreshOptions()
-        if open then
-            for _, v in pairs(Dropdown:GetChildren()) do
-                if v:IsA("TextButton") and v.Name ~= "DropdownButton" then
-                    v:Destroy()
-                end
-            end
-            local y = 50
-            for _, option in ipairs(DropdownConfig.Options) do
-                local optBtn = Instance.new("TextButton")
-                optBtn.Size = UDim2.new(1, -20, 0, 35)
-                optBtn.Position = UDim2.new(0, 10, 0, y)
-                optBtn.Text = option
-                optBtn.BackgroundColor3 = VXHConfig.Colors.Card
-                optBtn.TextColor3 = VXHConfig.Colors.Text
-                optBtn.Font = VXHConfig.DefaultFont
-                optBtn.TextSize = 14
-                optBtn.ZIndex = 16
-                optBtn.Parent = Dropdown
+    local optionButtons = {}
 
-                CreateCorner(optBtn, 6)
-
-                optBtn.MouseButton1Click:Connect(function()
-                    DropdownConfig.CurrentOption = option
-                    Button.Text = option
-                    DropdownConfig.Callback(option)
-                    open = false
-                    refreshOptions()
-                end)
-
-                y = y + 40
-            end
-            Dropdown.Size = UDim2.new(1, 0, 0, y)
-        else
-            for _, v in pairs(Dropdown:GetChildren()) do
-                if v:IsA("TextButton") and v.Name ~= "DropdownButton" then
-                    v:Destroy()
-                end
-            end
-            Dropdown.Size = UDim2.new(1, 0, 0, 50)
+    local function closeDropdown()
+        for _, btn in ipairs(optionButtons) do
+            btn:Destroy()
         end
+        optionButtons = {}
+        Dropdown.Size = UDim2.new(1, 0, 0, 50)
+        open = false
+    end
+
+    local function openDropdown()
+        local yOffset = 50
+        for i, option in ipairs(DropdownConfig.Options) do
+            local optionBtn = Instance.new("TextButton")
+            optionBtn.Name = "Option_" .. option
+            optionBtn.Size = UDim2.new(1, -30, 0, 30)
+            optionBtn.Position = UDim2.new(0, 15, 0, yOffset)
+            optionBtn.BackgroundColor3 = VXHConfig.Colors.Card
+            optionBtn.BorderSizePixel = 0
+            optionBtn.Text = option
+            optionBtn.TextColor3 = VXHConfig.Colors.Text
+            optionBtn.TextSize = 14
+            optionBtn.Font = VXHConfig.DefaultFont
+            optionBtn.ZIndex = 15
+            optionBtn.Parent = Dropdown
+            CreateCorner(optionBtn, 6)
+
+            optionBtn.MouseButton1Click:Connect(function()
+                Button.Text = option
+                DropdownConfig.CurrentOption = option
+                DropdownConfig.Callback(option)
+                closeDropdown()
+            end)
+
+            table.insert(optionButtons, optionBtn)
+            yOffset = yOffset + 35
+        end
+        Dropdown.Size = UDim2.new(1, 0, 0, yOffset)
+        open = true
     end
 
     Button.MouseButton1Click:Connect(function()
-        open = not open
-        refreshOptions()
+        if open then
+            closeDropdown()
+        else
+            openDropdown()
+        end
+    end)
+
+    Dropdown.MouseLeave:Connect(function()
+        if open then
+            closeDropdown()
+        end
     end)
 
     table.insert(Tab.Elements, Dropdown)
